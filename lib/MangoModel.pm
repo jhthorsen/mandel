@@ -14,6 +14,10 @@ use Mojo::Base 'MangoModel';
 L<MangoModel> is a simplistic model layer using the L<Mango> module to interact with a MongoDB backend. This class defines the overall model, including high level interaction.
 Individual results, called Types inherit from L<MangoModel::Type>. 
 
+=head1 WARNING
+
+This code is at BEST alpha quality and anything can and will change or break. DO NOT USE IN PRODUCTION CODE!!
+
 =cut
 
 use Mojo::Base -base;
