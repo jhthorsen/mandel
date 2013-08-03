@@ -21,6 +21,9 @@ use Mango;
 use Mojo::Loader;
 use Carp;
 
+our $VERSION = '0.01';
+$VERSION = eval $VERSION;
+
 =head1 ATTRIBUTES
 
 L<MangoModel> inherits all attributes from L<Mojo::Base> and implements the following new ones.

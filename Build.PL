@@ -14,9 +14,6 @@ my $builder = Module::Build->new(
     'perl'  => '5.10.1',
     'Mango' => 0,
   },
-  recommends => {
-    'HTML::LinkExtor' => 0,
-  },
   meta_merge => {
     resources  => {
       repository => "http://github.com/jberger/MangoModel",
