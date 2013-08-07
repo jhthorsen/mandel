@@ -188,10 +188,17 @@ Drops the database that your L<Mango> instance points to. Obviously this method 
 =cut
 
 sub find_one {
-  my ($self, $type, $query) = @_;
+  my ($self, $type, $query, $cb) = @_;
   my $class = $self->class_for($type);
-  my $collection = $class->collection;
-  return unless my $raw = $self->mango->db->collection($collection)->find_one($query);
+  my $collection = $self->mango->db->collection($class->collection);
+  if ( $cb ) {
+    $collection->find_one( $query, sub {
+      $_[2] = $self->new_class_from_raw( $class, $_[2] );
+      $cb->(@_);
+    });
+    return;
+  }
+  return unless my $raw = $collection->find_one($query);
   $self->new_class_from_raw( $class, $raw );
 }
 
