@@ -193,8 +193,9 @@ sub find_one {
   my $collection = $self->mango->db->collection($class->collection);
   if ( $cb ) {
     $collection->find_one( $query, sub {
-      $_[2] = $self->new_class_from_raw( $class, $_[2] );
-      $cb->(@_);
+      my ($collection, $error, $doc) = @_;
+      my $obj = $self->new_class_from_raw( $class, $doc );
+      $cb->($self, $error, $obj);
     });
     return;
   }
