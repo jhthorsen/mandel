@@ -16,9 +16,21 @@ Individual results, called Types inherit from L<MangoModel::Type>.
 
 This code is at BEST alpha quality and anything can and will change or break. DO NOT USE IN PRODUCTION CODE!!
 
+=head1 EVENTS
+
+L<MangoModel> inherits all events from L<Mojo::EventEmitter> and implements the following new ones.
+
+=over
+
+=item destroy
+
+Emitted when the object is destroyed (think C<DESTROY>).
+
+=back
+
 =head1 ATTRIBUTES
 
-L<MangoModel> inherits all attributes from L<Mojo::Base> and implements the following new ones.
+L<MangoModel> inherits all attributes from L<Mojo::EventEmitter> and implements the following new ones.
 
 =over
 
@@ -42,7 +54,7 @@ The uri used by L<Mango> to connect to the MongoDB server.
 
 =head1 METHODS
 
-L<MangoModel> inherits all methods from L<Mojo::Base> and implements the following new ones.
+L<MangoModel> inherits all methods from L<Mojo::EventEmitter> and implements the following new ones.
 
 =head2 Initialization Methods
 

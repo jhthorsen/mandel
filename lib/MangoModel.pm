@@ -20,7 +20,7 @@ This code is at BEST alpha quality and anything can and will change or break. DO
 
 =cut
 
-use Mojo::Base -base;
+use Mojo::Base 'Mojo::EventEmitter';
 use Mango;
 use Mojo::Loader;
 use Carp;
@@ -28,9 +28,21 @@ use Carp;
 our $VERSION = '0.01';
 $VERSION = eval $VERSION;
 
+=head1 EVENTS
+
+L<MangoModel> inherits all events from L<Mojo::EventEmitter> and implements the following new ones.
+
+=over
+
+=item destroy
+
+Emitted when the object is destroyed (think C<DESTROY>).
+
+=back
+
 =head1 ATTRIBUTES
 
-L<MangoModel> inherits all attributes from L<Mojo::Base> and implements the following new ones.
+L<MangoModel> inherits all attributes from L<Mojo::EventEmitter> and implements the following new ones.
 
 =over
 
@@ -68,7 +80,7 @@ has uri       => 'mongodb://localhost/mangomodeltest';
 
 =head1 METHODS
 
-L<MangoModel> inherits all methods from L<Mojo::Base> and implements the following new ones.
+L<MangoModel> inherits all methods from L<Mojo::EventEmitter> and implements the following new ones.
 
 =head2 Initialization Methods
 
@@ -213,6 +225,10 @@ sub count {
 sub drop_database {
   my $self = shift;
   $self->mango->db->command('dropDatabase');
+}
+
+sub DESTROY {
+  shift->emit('destroy');
 }
 
 1;
