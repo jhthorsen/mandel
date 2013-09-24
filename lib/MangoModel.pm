@@ -125,16 +125,14 @@ Given a type name, find the related class name, ensure that it is loaded (or els
 =item create
 
  my $item = $model->create('Type');
+ my $item = $model->create('Type', \%mongodb_doc);
 
-Create an unpopulated instance of a given type. The primary reason to use this over the normal constructor is for class name resolution and proper handling of certain type attributes.
+Create an unpopulated instance of a given type. The primary reason to use
+this over the normal constructor is for class name resolution and proper
+handling of certain type attributes.
 
-=item new_class_from_raw
-
-Takes a class name and a hash reference. Given that the hashref which conforms to the fields needed by the type, it constructs an instance of that type. This low-level method is mostly useful for subclasses.
-
-=item new_type_from_raw
-
-Takes a type name and a hash reference. Given that the hashref which conforms to the fields needed by the type, it constructs an instance of that type. This low-level method is mostly useful for subclasses.
+It is also possible to pass on a C<%mongodb_doc> which will populate all
+the L<fields|MangoModel::Type/field> defined in the C<Type>.
 
 =back
 
@@ -157,26 +155,18 @@ sub class_for {
 }
 
 sub create {
-  my ($self, $type) = @_;
-  my $class = $self->class_for($type);
-  my $obj = $class->new(
-    model   => $self,
-    updated => 1, 
-  );
-  return $obj;
-}
-
-sub new_class_from_raw {
-  my ($self, $class, $raw) = @_;
-  $class->new(
-    _raw  => $raw,
-    model => $self,
-  );
-}
-
-sub new_type_from_raw {
   my ($self, $type, $raw) = @_;
-  $self->new_class_from_raw( $self->class_for($type), $raw );
+  $self->_create_from_class( $self->class_for($type), $raw );
+}
+
+sub _create_from_class {
+  my ($self, $class, $raw) = @_;
+
+  return $class->new(
+    model   => $self,
+    updated => 1,
+    $raw ? (_raw => $raw) : (),
+  );
 }
 
 =head2 Database Interaction
@@ -206,13 +196,13 @@ sub find_one {
   if ( $cb ) {
     $collection->find_one( $query, sub {
       my ($collection, $error, $doc) = @_;
-      my $obj = $self->new_class_from_raw( $class, $doc );
+      my $obj = $self->_create_from_class( $class, $doc );
       $cb->($self, $error, $obj);
     });
     return;
   }
   return unless my $raw = $collection->find_one($query);
-  $self->new_class_from_raw( $class, $raw );
+  $self->_create_from_class( $class, $raw );
 }
 
 sub count {
