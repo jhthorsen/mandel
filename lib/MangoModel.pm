@@ -136,10 +136,11 @@ sub all_types {
 sub class_for {
   my ($self, $type) = @_;
   my $class = $self->namespace . '::' . $type;
-  if ( Mojo::Loader->new->load($class) ) {
+  if ( !$self->{loaded}{$class} and Mojo::Loader->new->load($class) ) {
     die $@; # rethrow
   }
-  return $class;
+  $self->{loaded}{$class} = $type;
+  $class;
 }
 
 sub create {
