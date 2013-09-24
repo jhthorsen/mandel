@@ -6,8 +6,8 @@ MangoModel - Simplistic Model Layer for Mango
 
 =head1 SYNOPSIS
 
-package MyModel;
-use Mojo::Base 'MangoModel';
+  package MyModel;
+  use Mojo::Base 'MangoModel';
 
 =head1 DESCRIPTION
 
@@ -46,10 +46,6 @@ L<MangoModel> inherits all attributes from L<Mojo::EventEmitter> and implements 
 
 =over
 
-=item app
-
-An instance of a Mojolicious application. If not provided, one can be lazily created when needed. This is especially useful to have access to helpers.
-
 =item mango
 
 An instance of L<Mango> which acts as the database connection. If not provided, one will be lazily created using the L</uri> attribute.
@@ -66,17 +62,9 @@ The uri used by L<Mango> to connect to the MongoDB server.
 
 =cut
 
-has app       => sub { require Mojolicious; Mojolicious->new };
 has mango     => sub { Mango->new( shift->uri or croak 'Please provide a uri' ) };
 has namespace => sub { my $self = shift; ref $self or $self };
 has uri       => 'mongodb://localhost/mangomodeltest';
-
-#sub import {
-#  push @_, __PACKAGE__;
-#  goto &Mojo::Base::import;
-#}
-
-# initialization
 
 =head1 METHODS
 
