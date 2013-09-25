@@ -162,9 +162,21 @@ sub _collection {
 }
 
 sub save {
-  my $self = shift;
-  $self->_collection->save($self->_raw);
-  $self->updated(0);
+  my($self, $cb) = @_;
+
+  if($cb) {
+    $self->_collection->save($self->_raw, sub {
+      my($collection, $err, $doc);
+      $self->updated(0) if !$err;
+      $self->$cb($err);
+    });
+  }
+  else {
+    $self->_collection->save($self->_raw);
+    $self->updated(0);
+  }
+
+  $self;
 }
 
 sub DESTROY {
