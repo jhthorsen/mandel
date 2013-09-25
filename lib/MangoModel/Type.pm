@@ -17,6 +17,7 @@ Individual results, called Types inherit from L<MangoModel::Type>.
 =cut
 
 use Mojo::Base 'Mojo::Base';
+use Mango::BSON::ObjectID;
 use Carp;
 
 =head1 ATTRIBUTES
@@ -24,6 +25,32 @@ use Carp;
 L<MangoModel> inherits all attributes from L<Mojo::Base> and implements the following new ones.
 
 =over
+
+=item id
+
+  $object_id = $self->id;
+  $self = $self->id("507f1f77bcf86cd799439011");
+  $self = $self->id(Mango::BSON::ObjectID->new);
+
+Returns the L<Mango::BSON::ObjectID> object for this document.
+Will create one if it does not already exist.
+
+This can field can also be set.
+
+=cut
+
+sub id {
+  my $self = shift;
+  my $raw = $self->_raw;
+
+  if ( @_ ) {
+    $self->updated(1);
+    $raw->{_id} = ref $_[0] ? $_[0] : Mango::BSON::ObjectID->new($_[0]);
+    return $self;
+  }
+
+  return $raw->{_id} ||= Mango::BSON::ObjectID->new;
+}
 
 =item autosave
 
@@ -40,7 +67,6 @@ When true, if the object goes out of scope, and C<autosave> is true, the data wi
 =back
 
 =cut
-
 
 has autosave => 1;
 has model    => sub { croak 'Must have a model object reference' };
@@ -72,6 +98,18 @@ sub import {
 =head1 METHODS
 
 L<MangoModel::Type> inherits all of the methods from L<Mojo::Base> and implements the following new ones.
+
+=head2 new
+
+Constructs a new object.
+
+=cut
+
+sub new {
+  my $self = shift->SUPER::new(@_);
+  $self->id(delete $self->{id}) if $self->{id};
+  $self;
+}
 
 =over
 
