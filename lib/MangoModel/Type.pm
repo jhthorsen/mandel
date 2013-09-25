@@ -85,7 +85,7 @@ sub import {
   my $caller = caller;
   {
     no strict 'refs';
-    *{"${caller}::field"} = \&_field;
+    *{"${caller}::field"} = sub { _field($caller, @_) };
     if ( @_ > 1 ) { # arg to import is collection name
       my $collection = pop;
       *{"${caller}::collection"} = sub { $collection };
@@ -132,25 +132,23 @@ This method stores the raw data in the database and collection. It also sets C<u
 sub initialize {}
 
 sub _field {
-  my $field = shift;
-  my $caller = caller;
-  no strict 'refs';
-  *{"${caller}::$field"} = sub { shift->_field_accessor( $field => @_ ) };
-}
+  my ($class, $fields) = @_;
+  return unless ($class = ref $class || $class) && $fields;
 
-sub _field_accessor {
-  my $self = shift;
-  my $key = shift;
-  my $raw = $self->_raw;
+  # Compile fieldibutes
+  for my $field (@{ref $fields eq 'ARRAY' ? $fields : [$fields]}) {
+    my $code = "package $class;\nsub $field {\n my \$r = \$_[0]->_raw;";
+    $code .= "if (\@_ == 1) {\n";
+    $code .= "    \$_[0]->{updated}=1;";
+    $code .= "    return \$r->{'$field'};";
+    $code .= "\n  }\n  \$r->{'$field'} = \$_[1];\n";
+    $code .= "  \$_[0];\n}";
 
-  # raw setter
-  if ( @_ ) {
-    $self->updated(1);
-    $raw->{$key} = shift;
-    return $self;
-  } 
-
-  return $raw->{$key};
+    # We compile custom attribute code for speed
+    no strict 'refs';
+    warn "-- Attribute $field in $class\n$code\n\n" if $ENV{MOJO_BASE_DEBUG};
+    Carp::croak "MangoModel::Type error: $@" unless eval "$code;1";
+  }
 }
 
 sub collection { croak 'collection must be overloaded by subclass' }
