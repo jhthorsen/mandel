@@ -35,8 +35,9 @@ L<DBIx::Class::Schema>.
 =cut
 
 use Mojo::Base 'Mojo::Base';
-use Mango;
 use Mojo::Loader;
+use Mojo::Util;
+use Mango;
 use Carp;
 
 our $VERSION = '0.01';
@@ -99,12 +100,17 @@ Returns a list of all the documents in the L</namespaces>.
 =cut
 
 sub all_document_names {
-  map {
-    my $ns = $_;
-    my $found = $LOADER->search($ns);
-    s/^${ns}::// for @$found;
-    @$found;
-  } @{ $_[0]->namespaces };
+  my $self = shift;
+  my @names;
+
+  for my $ns (@{ $self->namespaces }) {
+    for my $name (@{ $LOADER->search($ns) }) {
+      $name =~ s/^${ns}:://;
+      push @names, Mojo::Util::decamelize($name);
+    }
+  }
+
+  @names;
 }
 
 =head2 class_for
@@ -122,10 +128,11 @@ sub class_for {
   }
 
   for my $ns (@{ $self->namespaces }) {
-    my $class = $ns . '::' . $name;
+    my $class = $ns . '::' . Mojo::Util::camelize($name);
     my $e = $LOADER->load($class);
-    return $self->{loaded}{$name} = $class unless $e;
     die $e if ref $e;
+    next if $e;
+    return $self->{loaded}{$name} = $class
   }
 
   Carp::carp "Could not find class for $name";
