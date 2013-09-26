@@ -112,7 +112,6 @@ sub initialize {}
 =head2 remove
 
   $self = $self->remove(sub { my($self, $err) = @_; })
-  $bool = $self->remove;
 
 Will remove this object from the L</collection>, set L</autosave> to 0 and
 L</updated> to 1.
@@ -122,19 +121,13 @@ L</updated> to 1.
 sub remove {
   my($self, $cb) = @_;
 
-  if($cb) {
-    $self->_collection->remove({ _id => $self->id }, sub {
-      my($collection, $err, $doc);
-      $self->updated(1)->autosave(0) if $doc->{n};
-      $self->$cb($err);
-    });
-    return $self;
-  }
-  else {
-    $self->_collection->remove({ _id => $self->id });
-    $self->updated(1)->autosave(0);
-    return 1; # TODO
-  }
+  $self->_collection->remove({ _id => $self->id }, sub {
+    my($collection, $err, $doc);
+    $self->updated(1)->autosave(0) if $doc->{n};
+    $self->$cb($err);
+  });
+
+  $self;
 }
 
 =head2 save
@@ -150,17 +143,11 @@ sub save {
 
   $self->id; # make sure we have an ObjectID
 
-  if($cb) {
-    $self->_collection->save($self->_raw, sub {
-      my($collection, $err, $doc);
-      $self->updated(0) unless $err;
-      $self->$cb($err);
-    });
-  }
-  else {
-    $self->_collection->save($self->_raw);
-    $self->updated(0);
-  }
+  $self->_collection->save($self->_raw, sub {
+    my($collection, $err, $doc);
+    $self->updated(0) unless $err;
+    $self->$cb($err);
+  });
 
   $self;
 }
@@ -197,7 +184,7 @@ sub DESTROY {
 
 =head1 SEE ALSO
 
-L<Mojolicious>, L<Mango>
+L<Mojolicious>, L<Mango>, L<Mandel>
 
 =head1 AUTHOR
 

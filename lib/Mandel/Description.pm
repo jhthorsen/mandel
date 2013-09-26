@@ -2,7 +2,7 @@ package Mandel::Description;
 
 =head1 NAME
 
-Mandel::Description - An object describing the a document
+Mandel::Description - An object describing a document
 
 =cut
 
@@ -141,7 +141,7 @@ sub _load_class {
 
 =head1 SEE ALSO
 
-L<Mojolicious>, L<Mango>
+L<Mojolicious>, L<Mango>, L<Mandel>
 
 =head1 AUTHOR
 

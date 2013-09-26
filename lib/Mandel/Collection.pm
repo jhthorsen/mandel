@@ -39,33 +39,26 @@ has _cursor => sub {
 
 =head2 all
 
-  $self = $self->all(sub { my($self, $err, $docs) = @_; })
-  $objs = $self->all
+  $self = $self->all(sub { my($self, $err, $docs) = @_; });
 
 =cut
 
 sub all {
   my($self, $cb) = @_;
 
-  if($cb) {
-    $self->_cursor->all(sub {
-      my($cursor, $err, $docs) = @_;
-      return $self->$cb($err, []) if $err;
-      return $self->$cb($err, [ map { $self->_new_document($_, 0) } @$docs ]);
-    });
-    return $self;
-  }
-  else {
-    return $self->_cursor->all;
-  }
+  $self->_cursor->all(sub {
+    my($cursor, $err, $docs) = @_;
+    return $self->$cb($err, []) if $err;
+    return $self->$cb($err, [ map { $self->_new_document($_, 0) } @$docs ]);
+  });
+
+  $self;
 }
 
 =head2 create
 
- $self = $self->create(\%data, sub { my($self, $err, $obj) = @_; })
- $self = $self->create($obj, sub { my($self, $err, $obj) = @_; })
- $obj = $self->create(\%data)
- $obj = $self->create($obj)
+ $self = $self->create(\%data, sub { my($self, $err, $obj) = @_; });
+ $self = $self->create($obj, sub { my($self, $err, $obj) = @_; });
 
 Create an unpopulated instance of a given document. The primary reason to use
 this over the normal constructor is for class name resolution and proper
@@ -86,76 +79,58 @@ sub create {
 
 =head2 count
 
-  $self = $self->count(sub { my($self, $err, $int) = @_; })
-  $int = $self->count
+  $self = $self->count(sub { my($self, $err, $int) = @_; });
 
 =cut
 
 sub count {
   my($self, $cb) = @_;
 
-  if($cb) {
-    $self->_cursor->count(sub {
-      my($cursor, $err, $int) = @_;
-      $self->$cb($err, $int);
-    });
-    return $self;
-  }
-  else {
-    return $self->_cursor->count;
-  }
+  $self->_cursor->count(sub {
+    my($cursor, $err, $int) = @_;
+    $self->$cb($err, $int);
+  });
+
+  $self;
 }
 
 =head2 distinct
 
-  $values = $self->distinct('field_name')
-  $self = $self->distinct('field_name', sub { my($self, $err, $value) = @_; })
+  $self = $self->distinct('field_name', sub { my($self, $err, $value) = @_; });
 
 =cut
 
 sub distinct {
   my($self, $field, $cb) = @_;
 
-  if($cb) {
-    $self->_cursor->distinct($field, sub {
-      my($cursor, $err, $values) = @_;
-      $self->$cb($err, $values);
-    });
-    return $self;
-  }
-  else {
-    return $self->_cursor->distinct;
-  }
+  $self->_cursor->distinct($field, sub {
+    my($cursor, $err, $values) = @_;
+    $self->$cb($err, $values);
+  });
+
+  $self;
 }
 
 =head2 next
 
-  $self = $self->next(sub { my($self, $err, $obj) = @_; ... })
-  $obj = $self->next
+  $self = $self->next(sub { my($self, $err, $obj) = @_; ... });
 
 =cut
 
 sub next {
   my($self, $cb) = @_;
 
-  if($cb) {
-    $self->_cursor->next(sub {
-      my($cursor, $err, $doc) = @_;
-      $self->$cb($err, $doc ? $self->_new_document($doc, 0) : undef);
-    });
-    return $self;
-  }
-  else {
-    my $doc = $self->_cursor->next($cb);
-    return unless $doc;
-    return $self->_new_document($doc, 0);
-  }
+  $self->_cursor->next(sub {
+    my($cursor, $err, $doc) = @_;
+    $self->$cb($err, $doc ? $self->_new_document($doc, 0) : undef);
+  });
+
+  $self;
 }
 
 =head2 remove
 
-  $self = $self->remove(\%query, \%extra, sub { my($self, $err, $doc) = @_; })
-  $doc = $self->remove(\%query, \%extra)
+  $self = $self->remove(\%query, \%extra, sub { my($self, $err, $doc) = @_; });
 
 =cut
 
@@ -163,9 +138,8 @@ sub remove {
   my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
   my $self = shift;
 
-  return $self->_collection->remove(@_) unless $cb;
   $self->_collection->remove(@_, $cb);
-  return $self;
+  $self;
 }
 
 =head2 rewind
@@ -182,7 +156,7 @@ sub rewind {
 
 =head2 search
 
-  $clone = $self->search(\%query, \%extra)
+  $clone = $self->search(\%query, \%extra);
 
 =cut
 
@@ -200,8 +174,7 @@ sub search {
 
 =head2 single
 
-  $self = $self->single(sub { my($self, $err, $obj) = @_; })
-  $obj = $self->single
+  $self = $self->single(sub { my($self, $err, $obj) = @_; });
 
 =cut
 
@@ -209,18 +182,12 @@ sub single {
   my($self, $cb) = @_;
   my $cursor = $self->_cursor->clone->limit(-1);
 
-  if($cb) {
-    $cursor->next(sub {
-      my($cursor, $err, $doc) = @_;
-      $self->$cb($err, $doc ? $self->_new_document($doc, 0) : undef);
-    });
-    return $self;
-  }
-  else {
-    my $doc = $cursor->next($cb);
-    return unless $doc;
-    return $self->_new_document($doc, 0);
-  }
+  $cursor->next(sub {
+    my($cursor, $err, $doc) = @_;
+    $self->$cb($err, $doc ? $self->_new_document($doc, 0) : undef);
+  });
+
+  $self;
 }
 
 sub _new_document {
@@ -232,6 +199,10 @@ sub _new_document {
     $doc ? (_raw => $doc) : (),
   );
 }
+
+=head1 SEE ALSO
+
+L<Mojolicious>, L<Mango>, L<Mandel>
 
 =head1 AUTHOR
 
