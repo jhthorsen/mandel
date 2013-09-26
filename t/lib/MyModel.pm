@@ -1,6 +1,6 @@
 package MyModel;
 
-use Mojo::Base 'MangoModel';
+use Mojo::Base 'Mandel';
 
 1;
 

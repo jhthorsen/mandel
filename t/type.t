@@ -3,7 +3,7 @@ use Test::More;
 use lib 't/lib';
 use MyModel::Menu;
 
-isa_ok 'MyModel::Menu', 'MangoModel::Type';
+isa_ok 'MyModel::Menu', 'Mandel::Document';
 isa_ok 'MyModel::Menu', 'Mojo::Base';
 
 can_ok 'MyModel::Menu', 'field';

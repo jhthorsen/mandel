@@ -1,22 +1,25 @@
-package MangoModel;
+package Mandel;
 
 =head1 NAME
 
-MangoModel - Simplistic Model Layer for Mango
+Mandel - Simplistic Model Layer for Mango
 
 =head1 SYNOPSIS
 
   package MyModel;
-  use Mojo::Base 'MangoModel';
+  use Mojo::Base 'Mandel';
 
 =head1 DESCRIPTION
 
-L<MangoModel> is a simplistic model layer using the L<Mango> module to interact with a MongoDB backend. This class defines the overall model, including high level interaction.
-Individual results, called Types inherit from L<MangoModel::Type>. 
+L<Mandel> is a simplistic model layer using the L<Mango> module to interact
+with a MongoDB backend. This class defines the overall model, including high
+level interaction. Individual results, called Types inherit from
+L<Mandel::Document>.
 
 =head1 WARNING
 
-This code is at BEST alpha quality and anything can and will change or break. DO NOT USE IN PRODUCTION CODE!!
+This code is at BEST alpha quality and anything can and will change or break.
+DO NOT USE IN PRODUCTION CODE!
 
 =cut
 
@@ -30,7 +33,8 @@ $VERSION = eval $VERSION;
 
 =head1 EVENTS
 
-L<MangoModel> inherits all events from L<Mojo::EventEmitter> and implements the following new ones.
+L<Mandel> inherits all events from L<Mojo::EventEmitter> and implements
+the following new ones.
 
 =over
 
@@ -42,17 +46,20 @@ Emitted when the object is destroyed (think C<DESTROY>).
 
 =head1 ATTRIBUTES
 
-L<MangoModel> inherits all attributes from L<Mojo::EventEmitter> and implements the following new ones.
+L<Mandel> inherits all attributes from L<Mojo::EventEmitter> and implements
+the following new ones.
 
 =over
 
 =item mango
 
-An instance of L<Mango> which acts as the database connection. If not provided, one will be lazily created using the L</uri> attribute.
+An instance of L<Mango> which acts as the database connection. If not
+provided, one will be lazily created using the L</uri> attribute.
 
 =item namespace
 
-The namespace which will be searched when looking for Types. By default, the (sub)class name of this module.
+The namespace which will be searched when looking for Types. By default, the
+(sub)class name of this module.
 
 =item uri
 
@@ -68,7 +75,8 @@ has uri       => 'mongodb://localhost/mangomodeltest';
 
 =head1 METHODS
 
-L<MangoModel> inherits all methods from L<Mojo::EventEmitter> and implements the following new ones.
+L<Mandel> inherits all methods from L<Mojo::EventEmitter> and implements the
+following new ones.
 
 =head2 Initialization Methods
 
@@ -76,11 +84,14 @@ L<MangoModel> inherits all methods from L<Mojo::EventEmitter> and implements the
 
 =item initialize
 
-No-op placeholder which is not called by default. This name is reserved for subclasses to define initialization functions (which it would have to call itself).
+No-op placeholder which is not called by default. This name is reserved for
+subclasses to define initialization functions (which it would have to call
+itself).
 
 =item initialize_types
 
-Takes a list of type names. Calls the C<initialize> method of any type names passed in or if no names are passed then for all found types.
+Takes a list of type names. Calls the C<initialize> method of any type names
+passed in or if no names are passed then for all found types.
 
 =back
 
@@ -108,19 +119,20 @@ Returns a list of all the types in the L</namespace>.
 
 =item class_for
 
-Given a type name, find the related class name, ensure that it is loaded (or else die) and return it.
+Given a type name, find the related class name, ensure that it is loaded (or
+else die) and return it.
 
 =item create
 
  my $item = $model->create('Type');
  my $item = $model->create('Type', \%mongodb_doc);
 
-Create an unpopulated instance of a given type. The primary reason to use
-this over the normal constructor is for class name resolution and proper
-handling of certain type attributes.
+Create an unpopulated instance of a given type. The primary reason to use this
+over the normal constructor is for class name resolution and proper handling
+of certain type attributes.
 
-It is also possible to pass on a C<%mongodb_doc> which will populate all
-the L<fields|MangoModel::Type/field> defined in the C<Type>.
+It is also possible to pass on a C<%mongodb_doc> which will populate all the
+L<fields|Mandel::Document/field> defined in the C<Type>.
 
 =back
 
@@ -164,15 +176,19 @@ sub _create_from_class {
 
 =item find_one
 
-Takes a type name and a query document. Given that query it performs a C<find_one> and constructs an instance of that type from the result. If no result is found then it returns a false value.
+Takes a type name and a query document. Given that query it performs a
+C<find_one> and constructs an instance of that type from the result. If no
+result is found then it returns a false value.
 
 =item count
 
-Returns the count of documents in the collection associated with a given type name.
+Returns the count of documents in the collection associated with a given type
+name.
 
 =item drop_database
 
-Drops the database that your L<Mango> instance points to. Obviously this method should be used with care.
+Drops the database that your L<Mango> instance points to. Obviously this
+method should be used with care.
 
 =back
 
@@ -210,25 +226,28 @@ sub DESTROY {
   shift->emit('destroy');
 }
 
-1;
-
 =head1 SEE ALSO
 
 L<Mojolicious>, L<Mango>
 
 =head1 SOURCE REPOSITORY
 
-L<http://github.com/jberger/MangoModel>
+L<http://github.com/jhthorsen/mandel>
 
 =head1 AUTHOR
 
-Joel Berger, E<lt>joel.a.berger@gmail.comE<gt>
+Jan Henning Thorsen - C<jhthorsen@cpan.org>
+
+This project is a fork of L<MangoModel|http://github.com/jberger/MangoModel>,
+created by Joel Berger, E<lt>joel.a.berger@gmail.comE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2013 by Joel Berger
+Copyright (C) 2013 by Jan Henning Thorsen
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
 
 =cut
+
+1;

@@ -1,5 +1,5 @@
 package MyType;
-use MangoModel::Type;
+use Mandel::Document;
 
 field 'foo';
 field [qw( bar baz )];

@@ -11,7 +11,7 @@ plan skip_all => 'Set TEST_ONLINE to test'
 my $model = MyModel->new( uri => $uri );
 
 isa_ok $model, 'MyModel';
-isa_ok $model, 'MangoModel';
+isa_ok $model, 'Mandel';
 isa_ok $model, 'Mojo::Base';
 
 $model->drop_database;
@@ -27,7 +27,7 @@ is $model->count( 'Menu' ), 1, 'item inserted';
 {
   my $item = $model->find_one( Menu => { soup => 'tomato' } );
   isa_ok $item, 'MyModel::Menu';
-  isa_ok $item, 'MangoModel::Type';
+  isa_ok $item, 'Mandel::Document';
   isa_ok $item, 'Mojo::Base';
   is $item->soup, 'tomato', 'found item (blocking)';
 }

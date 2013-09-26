@@ -1,6 +1,6 @@
 package MyModel::Menu;
 
-use MangoModel::Type 'menu';
+use Mandel::Document 'menu';
 
 field 'soup';
 
