@@ -65,10 +65,7 @@ sub _other_object {
         $self->$cb($err, $obj);
       });
     }
-    elsif($obj = $self->{$field}) { # retrieve from cache ====================
-      $self->$cb('', $obj);
-    }
-    else { # retrive from database ===========================================
+    else { # get =============================================================
       my $collection = $self->model->mango->db->collection($other->description->collection);
       $collection->find_one({ _id => $self->{_raw}{$field} }, sub {
         my($collection, $err, $doc);

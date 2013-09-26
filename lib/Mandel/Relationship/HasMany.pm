@@ -57,17 +57,11 @@ sub _other_objects {
   return $field => sub {
     my($self, $cb) = @_;
 
-    if(my $objs = $self->{$field}) {
-      $self->$cb('', $objs);
-    }
-    else {
-      $self->$search->all(sub {
-        my($collection, $err, $objs) = @_;
-        return $self->$cb($err) if $err;
-        $self->{$field} = $objs;
-        $self->$cb($err, $objs);
-      });
-    }
+    $self->$search->all(sub {
+      my($collection, $err, $objs) = @_;
+      return $self->$cb($err) if $err;
+      $self->$cb($err, $objs);
+    });
 
     $self;
   };
@@ -91,7 +85,6 @@ sub _push_other_object {
       my($collection, $err, $doc);
       $self->$cb($err, $obj) if $err;
       push @{ $self->{_raw}{$field} }, $obj->id;
-      push @{ $self->{$field} }, $obj if $self->{$field};
       $self->$cb($err, $obj);
     });
 
