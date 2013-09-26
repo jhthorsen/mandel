@@ -9,6 +9,28 @@ Mandel - Simplistic Model Layer for Mango
   package MyModel;
   use Mojo::Base 'Mandel';
 
+  package MyModel::Person;
+  use Mandel::Document;
+  field [qw( name age )];
+
+  package MyApp;
+  my $mandel = MyModel->new(uri => 'mongodb://localhost/mandeltest');
+  my $persons = $mandel->collection('person');
+
+  {
+    my $p1 = $persons->create({ name => 'Bruce', age => 30 });
+    # $p1 is saved when it goes out of scope
+  }
+
+  my $n_persons = $persons->count;
+  my $person = $persons->search({ name => 'Bruce' })->single;
+
+  for my $p (@{ $persons->all }) {
+    $p->age(25); # change and save automatically
+  }
+
+  $person->remove;
+
 =head1 DESCRIPTION
 
 L<Mandel> is a simplistic model layer using the L<Mango> module to interact
@@ -20,17 +42,6 @@ L<Mandel::Document>.
 
 This code is at BEST alpha quality and anything can and will change or break.
 DO NOT USE IN PRODUCTION CODE!
-
-=head1 TODO
-
-I want to replicate L<DBIx::Class> to some extent:
-L<DBIx::Class::FilterColumn>,
-L<DBIx::Class::InflateColumn>,
-L<DBIx::Class::Relationship> and friends,
-L<DBIx::Class::ResultSet>,
-L<DBIx::Class::ResultSource>,
-L<DBIx::Class::Row> and
-L<DBIx::Class::Schema>.
 
 =cut
 
@@ -48,8 +59,8 @@ my $LOADER = Mojo::Loader->new;
 
 =head1 ATTRIBUTES
 
-L<Mandel> inherits all attributes from L<Mojo::EventEmitter> and implements
-the following new ones.
+L<Mandel> inherits all attributes from L<Mojo::Base> and implements the
+following new ones.
 
 =head2 mango
 
@@ -69,7 +80,7 @@ The uri used by L<Mango> to connect to the MongoDB server.
 
 has mango => sub { Mango->new( shift->uri or croak 'Please provide a uri' ) };
 has namespaces => sub { [ ref $_[0] ] };
-has uri => 'mongodb://localhost/mangomodeltest';
+has uri => 'mongodb://localhost/mandeltest';
 
 =head1 METHODS
 

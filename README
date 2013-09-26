@@ -5,6 +5,28 @@ SYNOPSIS
       package MyModel;
       use Mojo::Base 'Mandel';
 
+      package MyModel::Person;
+      use Mandel::Document;
+      field [qw( name age )];
+
+      package MyApp;
+      my $mandel = MyModel->new(uri => 'mongodb://localhost/mandeltest');
+      my $persons = $mandel->collection('person');
+
+      {
+        my $p1 = $persons->create({ name => 'Bruce', age => 30 });
+        # $p1 is saved when it goes out of scope
+      }
+
+      my $n_persons = $persons->count;
+      my $person = $persons->search({ name => 'Bruce' })->single;
+
+      for my $p (@{ $persons->all }) {
+        $p->age(25); # change and save automatically
+      }
+
+      $person->remove;
+
 DESCRIPTION
     Mandel is a simplistic model layer using the Mango module to interact
     with a MongoDB backend. This class defines the overall model, including
@@ -15,15 +37,9 @@ WARNING
     This code is at BEST alpha quality and anything can and will change or
     break. DO NOT USE IN PRODUCTION CODE!
 
-TODO
-    I want to replicate DBIx::Class to some extent:
-    DBIx::Class::FilterColumn, DBIx::Class::InflateColumn,
-    DBIx::Class::Relationship and friends, DBIx::Class::ResultSet,
-    DBIx::Class::ResultSource, DBIx::Class::Row and DBIx::Class::Schema.
-
 ATTRIBUTES
-    Mandel inherits all attributes from Mojo::EventEmitter and implements
-    the following new ones.
+    Mandel inherits all attributes from Mojo::Base and implements the
+    following new ones.
 
   mango
     An instance of Mango which acts as the database connection. If not
@@ -52,29 +68,8 @@ METHODS
     Given a document name, find the related class name, ensure that it is
     loaded (or else die) and return it.
 
-  create
-     my $head2 = $model->create('Type');
-     my $head2 = $model->create('Type', \%mongodb_doc);
-
-    Create an unpopulated instance of a given document. The primary reason
-    to use this over the normal constructor is for class name resolution and
-    proper handling of certain document attributes.
-
-    It is also possible to pass on a %mongodb_doc which will populate all
-    the fields defined in the "Type".
-
-  find_one
-    Takes a document name and a query document. Given that query it performs
-    a "find_one" and constructs an instance of that document from the
-    result. If no result is found then it returns a false value.
-
-  count
-    Returns the count of documents in the collection associated with a given
-    document name.
-
-  drop_database
-    Drops the database that your Mango instance points to. Obviously this
-    method should be used with care.
+  collection
+      $collection_obj = $self->collection($name);
 
 SEE ALSO
     Mojolicious, Mango
