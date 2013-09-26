@@ -20,6 +20,7 @@ from L<Mandel::Document>.
 
 use Mojo::Base 'Mojo::Base';
 use Mango::BSON::ObjectID;
+use Mojo::Util;
 use Carp;
 
 =head1 ATTRIBUTES
@@ -55,7 +56,7 @@ sub id {
 
 =head2 autosave
 
-When true, if the object goes out of scope, and C<updated> is true, the data
+When true, if the object goes out of scope, and L</updated> is true, the data
 will be saved.
 
 =head2 model
@@ -64,7 +65,7 @@ An instance of L<Mandel>. This is required.
 
 =head2 updated
 
-When true, if the object goes out of scope, and C<autosave> is true, the data
+When true, if the object goes out of scope, and L</autosave> is true, the data
 will be saved.
 
 =cut
@@ -90,14 +91,15 @@ way to get and set these values.
 
 sub import {
   my $caller = caller;
-  {
-    no strict 'refs';
-    *{"${caller}::field"} = sub { _field($caller, @_) };
-    if ( @_ > 1 ) { # arg to import is collection name
-      my $collection = pop;
-      *{"${caller}::collection"} = sub { $collection };
-    }
+  my $collection = shift;
+
+  unless(defined $collection) {
+    $collection = Mojo::Util::decamelize($caller =~ /::(\w+)$/);
+    $collection .= 's' unless $collection =~ /s$/;
   }
+
+  Mojo::Util::monkey_patch($caller, field => sub { _field($caller, @_) });
+  Mojo::Util::monkey_patch($caller, collection => sub { $collection }) if $collection;
   push @_, __PACKAGE__;
   goto &Mojo::Base::import;
 }
@@ -140,8 +142,8 @@ sub collection { croak 'collection must be overloaded by subclass' }
 =head2 save
 
 This method stores the raw data in the database and collection. It also sets
-C<updated> to false. C<save> is automatically called when the object goes out
-of scope if and only if C<autosave> and C<updated> are both true.
+L</updated> to false. L</save> is automatically called when the object goes out
+of scope if and only if L</autosave> and L</updated> are both true.
 
 =cut
 
@@ -151,7 +153,7 @@ sub save {
   if($cb) {
     $self->_collection->save($self->_raw, sub {
       my($collection, $err, $doc);
-      $self->updated(0) if !$err;
+      $self->updated(0) unless $err;
       $self->$cb($err);
     });
   }
