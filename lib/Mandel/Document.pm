@@ -6,8 +6,8 @@ Mandel::Document - Collection Types for Mandel
 
 =head1 SYNOPSIS
 
-package MyModel::MyType;
-use Mandel::Document 'mytype_collection_name';
+  package MyModel::MyType;
+  use Mandel::Document 'mytype_collection_name';
 
 =head1 DESCRIPTION
 
@@ -27,9 +27,7 @@ use Carp;
 L<Mandel> inherits all attributes from L<Mojo::Base> and implements the
 following new ones.
 
-=over
-
-=item id
+=head2 id
 
   $object_id = $self->id;
   $self = $self->id("507f1f77bcf86cd799439011");
@@ -55,21 +53,19 @@ sub id {
   return $raw->{_id} ||= Mango::BSON::ObjectID->new;
 }
 
-=item autosave
+=head2 autosave
 
 When true, if the object goes out of scope, and C<updated> is true, the data
 will be saved.
 
-=item model
+=head2 model
 
 An instance of L<Mandel>. This is required.
 
-=item updated
+=head2 updated
 
 When true, if the object goes out of scope, and C<autosave> is true, the data
 will be saved.
-
-=back
 
 =cut
 
@@ -123,30 +119,57 @@ sub new {
   $self;
 }
 
-=over
-
-=item initialize
+=head2 initialize
 
 A no-op placeholder useful for initialization (see C<initialize_types> in
 L<Mandel>).
 
-=item collection
+=cut
+
+sub initialize {}
+
+=head2 collection
 
 This (static) method should provide the name of the collection that Mango uses
 to store the data. This may be set by the C<import> method. The default
 implementation will die.
 
-=item save
+=cut
+
+sub collection { croak 'collection must be overloaded by subclass' }
+
+=head2 save
 
 This method stores the raw data in the database and collection. It also sets
 C<updated> to false. C<save> is automatically called when the object goes out
 of scope if and only if C<autosave> and C<updated> are both true.
 
-=back
-
 =cut
 
-sub initialize {}
+sub save {
+  my($self, $cb) = @_;
+
+  if($cb) {
+    $self->_collection->save($self->_raw, sub {
+      my($collection, $err, $doc);
+      $self->updated(0) if !$err;
+      $self->$cb($err);
+    });
+  }
+  else {
+    $self->_collection->save($self->_raw);
+    $self->updated(0);
+  }
+
+  $self;
+}
+
+# returns a Mango::Collection object for the named collection,
+# perhaps this should be a public method
+sub _collection {
+  my $self = shift;
+  $self->model->mango->db->collection($self->collection);
+}
 
 sub _field {
   my ($class, $fields) = @_;
@@ -166,33 +189,6 @@ sub _field {
     warn "-- Attribute $field in $class\n$code\n\n" if $ENV{MOJO_BASE_DEBUG};
     Carp::croak "Mandel::Document error: $@" unless eval "$code;1";
   }
-}
-
-sub collection { croak 'collection must be overloaded by subclass' }
-
-# returns a Mango::Collection object for the named collection,
-# perhaps this should be a public method
-sub _collection {
-  my $self = shift;
-  $self->model->mango->db->collection($self->collection);
-}
-
-sub save {
-  my($self, $cb) = @_;
-
-  if($cb) {
-    $self->_collection->save($self->_raw, sub {
-      my($collection, $err, $doc);
-      $self->updated(0) if !$err;
-      $self->$cb($err);
-    });
-  }
-  else {
-    $self->_collection->save($self->_raw);
-    $self->updated(0);
-  }
-
-  $self;
 }
 
 sub DESTROY {

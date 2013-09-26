@@ -34,7 +34,7 @@ L<DBIx::Class::Schema>.
 
 =cut
 
-use Mojo::Base 'Mojo::EventEmitter';
+use Mojo::Base 'Mojo::Base';
 use Mango;
 use Mojo::Loader;
 use Carp;
@@ -42,41 +42,24 @@ use Carp;
 our $VERSION = '0.01';
 $VERSION = eval $VERSION;
 
-=head1 EVENTS
-
-L<Mandel> inherits all events from L<Mojo::EventEmitter> and implements
-the following new ones.
-
-=over
-
-=item destroy
-
-Emitted when the object is destroyed (think C<DESTROY>).
-
-=back
-
 =head1 ATTRIBUTES
 
 L<Mandel> inherits all attributes from L<Mojo::EventEmitter> and implements
 the following new ones.
 
-=over
-
-=item mango
+=head2 mango
 
 An instance of L<Mango> which acts as the database connection. If not
 provided, one will be lazily created using the L</uri> attribute.
 
-=item namespace
+=head2 namespace
 
 The namespace which will be searched when looking for Types. By default, the
 (sub)class name of this module.
 
-=item uri
+=head2 uri
 
 The uri used by L<Mango> to connect to the MongoDB server.
-
-=back
 
 =cut
 
@@ -86,33 +69,30 @@ has uri       => 'mongodb://localhost/mangomodeltest';
 
 =head1 METHODS
 
-L<Mandel> inherits all methods from L<Mojo::EventEmitter> and implements the
-following new ones.
+L<Mandel> inherits all methods from L<Mojo::Base> and implements the following
+new ones.
 
-=head2 Initialization Methods
-
-=over
-
-=item initialize
+=head2 initialize
 
 No-op placeholder which is not called by default. This name is reserved for
 subclasses to define initialization functions (which it would have to call
 itself).
 
-=item initialize_types
-
-Takes a list of type names. Calls the C<initialize> method of any type names
-passed in or if no names are passed then for all found types.
-
-=back
-
 =cut
 
 sub initialize {}
 
+=head2 initialize_types
+
+Takes a list of type names. Calls the C<initialize> method of any type names
+passed in or if no names are passed then for all found types.
+
+=cut
+
 sub initialize_types {
   my $self = shift;
   my @types = @_ ? @_ : $self->all_types;
+
   foreach my $type ( @types ) {
     my $class = $self->class_for($type);
     my $collection = $self->mango->db->collection($class->collection);
@@ -120,32 +100,9 @@ sub initialize_types {
   }
 }
 
-=head2 Type and Type Class Helper Methods
-
-=over
-
-=item all_types
+=head2 all_types
 
 Returns a list of all the types in the L</namespace>.
-
-=item class_for
-
-Given a type name, find the related class name, ensure that it is loaded (or
-else die) and return it.
-
-=item create
-
- my $item = $model->create('Type');
- my $item = $model->create('Type', \%mongodb_doc);
-
-Create an unpopulated instance of a given type. The primary reason to use this
-over the normal constructor is for class name resolution and proper handling
-of certain type attributes.
-
-It is also possible to pass on a C<%mongodb_doc> which will populate all the
-L<fields|Mandel::Document/field> defined in the C<Type>.
-
-=back
 
 =cut
 
@@ -156,6 +113,13 @@ sub all_types {
   return map { my $m = $_; $m =~ s/^${namespace}:://; $m } @$modules;
 }
 
+=head2 class_for
+
+Given a type name, find the related class name, ensure that it is loaded (or
+else die) and return it.
+
+=cut
+
 sub class_for {
   my ($self, $type) = @_;
   my $class = $self->namespace . '::' . $type;
@@ -165,6 +129,20 @@ sub class_for {
   $self->{loaded}{$class} = $type;
   $class;
 }
+
+=head2 create
+
+ my $head2 = $model->create('Type');
+ my $head2 = $model->create('Type', \%mongodb_doc);
+
+Create an unpopulated instance of a given type. The primary reason to use this
+over the normal constructor is for class name resolution and proper handling
+of certain type attributes.
+
+It is also possible to pass on a C<%mongodb_doc> which will populate all the
+L<fields|Mandel::Document/field> defined in the C<Type>.
+
+=cut
 
 sub create {
   my ($self, $type, $raw) = @_;
@@ -181,27 +159,11 @@ sub _create_from_class {
   );
 }
 
-=head2 Database Interaction
-
-=over
-
-=item find_one
+=head2 find_one
 
 Takes a type name and a query document. Given that query it performs a
 C<find_one> and constructs an instance of that type from the result. If no
 result is found then it returns a false value.
-
-=item count
-
-Returns the count of documents in the collection associated with a given type
-name.
-
-=item drop_database
-
-Drops the database that your L<Mango> instance points to. Obviously this
-method should be used with care.
-
-=back
 
 =cut
 
@@ -221,6 +183,13 @@ sub find_one {
   $self->_create_from_class( $class, $raw );
 }
 
+=head2 count
+
+Returns the count of documents in the collection associated with a given type
+name.
+
+=cut
+
 sub count {
   my ($self, $type) = @_;
   my $class = $self->class_for($type);
@@ -228,13 +197,16 @@ sub count {
   return $self->mango->db->collection($collection)->find->count;
 }
 
+=head2 drop_database
+
+Drops the database that your L<Mango> instance points to. Obviously this
+method should be used with care.
+
+=cut
+
 sub drop_database {
   my $self = shift;
   $self->mango->db->command('dropDatabase');
-}
-
-sub DESTROY {
-  shift->emit('destroy');
 }
 
 =head1 SEE ALSO

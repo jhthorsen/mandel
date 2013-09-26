@@ -21,74 +21,64 @@ TODO
     DBIx::Class::Relationship and friends, DBIx::Class::ResultSet,
     DBIx::Class::ResultSource, DBIx::Class::Row and DBIx::Class::Schema.
 
-EVENTS
-    Mandel inherits all events from Mojo::EventEmitter and implements the
-    following new ones.
-
-    destroy
-        Emitted when the object is destroyed (think "DESTROY").
-
 ATTRIBUTES
     Mandel inherits all attributes from Mojo::EventEmitter and implements
     the following new ones.
 
-    mango
-        An instance of Mango which acts as the database connection. If not
-        provided, one will be lazily created using the "uri" attribute.
+  mango
+    An instance of Mango which acts as the database connection. If not
+    provided, one will be lazily created using the "uri" attribute.
 
-    namespace
-        The namespace which will be searched when looking for Types. By
-        default, the (sub)class name of this module.
+  namespace
+    The namespace which will be searched when looking for Types. By default,
+    the (sub)class name of this module.
 
-    uri The uri used by Mango to connect to the MongoDB server.
+  uri
+    The uri used by Mango to connect to the MongoDB server.
 
 METHODS
-    Mandel inherits all methods from Mojo::EventEmitter and implements the
-    following new ones.
+    Mandel inherits all methods from Mojo::Base and implements the following
+    new ones.
 
-  Initialization Methods
-    initialize
-        No-op placeholder which is not called by default. This name is
-        reserved for subclasses to define initialization functions (which it
-        would have to call itself).
+  initialize
+    No-op placeholder which is not called by default. This name is reserved
+    for subclasses to define initialization functions (which it would have
+    to call itself).
 
-    initialize_types
-        Takes a list of type names. Calls the "initialize" method of any
-        type names passed in or if no names are passed then for all found
-        types.
+  initialize_types
+    Takes a list of type names. Calls the "initialize" method of any type
+    names passed in or if no names are passed then for all found types.
 
-  Type and Type Class Helper Methods
-    all_types
-        Returns a list of all the types in the "namespace".
+  all_types
+    Returns a list of all the types in the "namespace".
 
-    class_for
-        Given a type name, find the related class name, ensure that it is
-        loaded (or else die) and return it.
+  class_for
+    Given a type name, find the related class name, ensure that it is loaded
+    (or else die) and return it.
 
-    create
-         my $item = $model->create('Type');
-         my $item = $model->create('Type', \%mongodb_doc);
+  create
+     my $head2 = $model->create('Type');
+     my $head2 = $model->create('Type', \%mongodb_doc);
 
-        Create an unpopulated instance of a given type. The primary reason
-        to use this over the normal constructor is for class name resolution
-        and proper handling of certain type attributes.
+    Create an unpopulated instance of a given type. The primary reason to
+    use this over the normal constructor is for class name resolution and
+    proper handling of certain type attributes.
 
-        It is also possible to pass on a %mongodb_doc which will populate
-        all the fields defined in the "Type".
+    It is also possible to pass on a %mongodb_doc which will populate all
+    the fields defined in the "Type".
 
-  Database Interaction
-    find_one
-        Takes a type name and a query document. Given that query it performs
-        a "find_one" and constructs an instance of that type from the
-        result. If no result is found then it returns a false value.
+  find_one
+    Takes a type name and a query document. Given that query it performs a
+    "find_one" and constructs an instance of that type from the result. If
+    no result is found then it returns a false value.
 
-    count
-        Returns the count of documents in the collection associated with a
-        given type name.
+  count
+    Returns the count of documents in the collection associated with a given
+    type name.
 
-    drop_database
-        Drops the database that your Mango instance points to. Obviously
-        this method should be used with care.
+  drop_database
+    Drops the database that your Mango instance points to. Obviously this
+    method should be used with care.
 
 SEE ALSO
     Mojolicious, Mango
