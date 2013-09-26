@@ -58,85 +58,21 @@ sub add_field {
 
 =head2 add_relationship
 
-  $self->add_relationship(has_many => $field_name => 'Other::Document::Class');
+  $self->add_relationship(has_one => $field_name => 'Other::Document::Class');
 
-Example:
-
-  MyModel::Cat
-    ->description
-    ->add_relationship(has_many => owners => 'MyModel::Person');
-
-Will add:
-
-  $cat = MyModel::Cat->new->add_owner(\%args, $cb);
-  $cat = MyModel::Cat->new->add_owner($person_obj, $cb);
-
-  $person_obj = MyModel::Cat->new->add_owner(\%args);
-  $person_obj = MyModel::Cat->new->add_owner($person_obj);
-
-  $persons = MyModel::Cat->new->search_owners;
+See L<Mandel::Relationship::HasMany> and L<Mandel::Relationship::HasOne>.
 
 =cut
 
 sub add_relationship {
-  my $self = shift;
-  my $method = sprintf "_add_%s_relationship", shift;
-
-  $self->$method(@_);
-  $self;
-}
-
-sub _add_has_many_relationship {
-  my($self, $field, $other) = @_;
-  my $class = $self->document_class;
-  my $singular = $field;
-
-  $singular =~ s/s$//;
-
-  $self->add_field($field);
-
-  Mojo::Util::monkey_patch($class, "add_$singular" => sub {
-    my($self, $obj, $cb) = @_;
-
-    if(ref $obj eq 'HASH') {
-      $obj = $self->_load_class($other)->new(%$obj, model => $self->model);
-    }
-
-    if($cb) {
-      $obj->save(sub {
-        my($obj, $err) = @_;
-        $self->$cb($err, $obj) if $err;
-        push @{ $self->{_raw}{$field} }, $obj->id;
-        $self->$cb($err, $obj);
-      });
-      return $self;
-    }
-    else {
-      return unless $obj->save;
-      push @{ $self->{_raw}{$field} }, $obj->id;
-      return $obj;
-    }
-  });
-
-  Mojo::Util::monkey_patch($class, "search_$field" => sub {
-    my($self) = @_;
-    my $ids = $self->{_raw}{$field} || [];
-
-    Mango::Collection->new(
-      document_class => $self->_load_class($other),
-      model => $self->model,
-      query => {
-        _id => { '$all' => [ @$ids ] },
-      },
-    );
-  });
-}
-
-sub _load_class {
-  my $class = pop;
+  my($self, $type, $field, $other) = @_;
+  my $class = 'Mandel::Relationship::' .Mojo::Util::camelize($type);
   my $e = $LOADER->load($class);
+
   die $e if ref $e;
-  $class;
+  $class->create($self->document_class, $field, $other);
+  $class->{relationship}{$field} = $class; # TODO: The value can be redefined any time
+  $self;
 }
 
 =head1 SEE ALSO

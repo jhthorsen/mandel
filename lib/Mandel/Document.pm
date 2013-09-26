@@ -172,6 +172,8 @@ sub import {
 
   Mojo::Util::monkey_patch($caller, description => sub { $description });
   Mojo::Util::monkey_patch($caller, field => sub { $description->add_field(@_) });
+  Mojo::Util::monkey_patch($caller, has_many => sub { $description->add_relationship(has_many => @_) });
+  Mojo::Util::monkey_patch($caller, has_one => sub { $description->add_relationship(has_one => @_) });
 
   @_ = ($class, __PACKAGE__);
   goto &Mojo::Base::import;
