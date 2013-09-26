@@ -111,7 +111,7 @@ sub _search_other_objects {
 
 =head1 SEE ALSO
 
-L<Mojolicious>, L<Mango>, L<Mandel>
+L<Mojolicious>, L<Mango>, L<Mandel::Relationship>
 
 =head1 AUTHOR
 

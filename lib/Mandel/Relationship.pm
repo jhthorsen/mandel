@@ -4,6 +4,16 @@ package Mandel::Relationship;
 
 Mandel::Relationship - Base class for relationships
 
+=head1 DESCRIPTION
+
+=over 4
+
+=item * L<Mandel::Relationship::HasMany>
+
+=item * L<Mandel::Relationship::HasOne>
+
+=back
+
 =cut
 
 use Mojo::Base -base;

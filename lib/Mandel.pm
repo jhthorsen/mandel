@@ -2,7 +2,7 @@ package Mandel;
 
 =head1 NAME
 
-Mandel - Simplistic Model Layer for Mango
+Mandel - Async model layer for MongoDB objects using Mango
 
 =head1 SYNOPSIS
 
@@ -12,6 +12,8 @@ Mandel - Simplistic Model Layer for Mango
   package MyModel::Person;
   use Mandel::Document;
   field [qw( name age )];
+  has_many cats => 'MyModel::Cat';
+  has_one favorite_cat => 'MyModel::Cat';
 
   package MyApp;
   my $mandel = MyModel->new(uri => 'mongodb://localhost/mandeltest');
@@ -19,29 +21,50 @@ Mandel - Simplistic Model Layer for Mango
 
   {
     my $p1 = $persons->create({ name => 'Bruce', age => 30 });
-    # $p1 is saved when it goes out of scope
+    $p1->save(sub {});
   }
 
-  my $n_persons = $persons->count;
-  my $person = $persons->search({ name => 'Bruce' })->single;
+  $persons->count(sub {
+    my($persons, $n_persons) = @_;
+  });
 
-  for my $p (@{ $persons->all }) {
-    $p->age(25); # change and save automatically
-  }
+  $persons->all(sub {
+    my($persons, $err, $objs) = @_;
+    for my $p (@$objs) {
+      $p->age(25)->save(sub {});
+    }
+  });
 
-  $person->remove;
+  $persons->search({ name => 'Bruce' })->single(sub {
+    my($persons, $obj) = @_;
+    $obj->cats(sub {
+      my($obj, $err, $cats) = @_;
+      $_->remove(sub {}) for @$cats;
+    });
+  });
 
 =head1 DESCRIPTION
 
-L<Mandel> is a simplistic model layer using the L<Mango> module to interact
-with a MongoDB backend. This class defines the overall model, including high
-level interaction. Individual results, called Types inherit from
-L<Mandel::Document>.
+L<Mandel> is an async object-document-mapper. It allows you to work with your
+MongoDB documents in Perl as objects.
 
-=head1 WARNING
+This class binds it all together:
 
-This code is at BEST alpha quality and anything can and will change or break.
-DO NOT USE IN PRODUCTION CODE!
+=over 4
+
+=item * L<Mandel::Description>
+
+An object describing a document.
+
+=item * L<Mandel::Collection>
+
+A collection of Mandel documents.
+
+=item * L<Mandel::Document>
+
+A single MongoDB document with logic.
+
+=back
 
 =cut
 
@@ -75,6 +98,10 @@ The namespaces which will be searched when looking for Types. By default, the
 =head2 uri
 
 The uri used by L<Mango> to connect to the MongoDB server.
+
+IMPORTANT! It requires the database to be part of the URI. Example:
+
+  mongodb://localhost/my_database_name
 
 =cut
 

@@ -1,5 +1,5 @@
 NAME
-    Mandel - Simplistic Model Layer for Mango
+    Mandel - Async model layer for MongoDB objects using Mango
 
 SYNOPSIS
       package MyModel;
@@ -8,6 +8,8 @@ SYNOPSIS
       package MyModel::Person;
       use Mandel::Document;
       field [qw( name age )];
+      has_many cats => 'MyModel::Cat';
+      has_one favorite_cat => 'MyModel::Cat';
 
       package MyApp;
       my $mandel = MyModel->new(uri => 'mongodb://localhost/mandeltest');
@@ -15,27 +17,45 @@ SYNOPSIS
 
       {
         my $p1 = $persons->create({ name => 'Bruce', age => 30 });
-        # $p1 is saved when it goes out of scope
+        $p1->save(sub {});
       }
 
-      my $n_persons = $persons->count;
-      my $person = $persons->search({ name => 'Bruce' })->single;
+      $persons->count(sub {
+        my($persons, $n_persons) = @_;
+      });
 
-      for my $p (@{ $persons->all }) {
-        $p->age(25); # change and save automatically
-      }
+      $persons->all(sub {
+        my($persons, $err, $objs) = @_;
+        for my $p (@$objs) {
+          $p->age(25)->save(sub {});
+        }
+      });
 
-      $person->remove;
+      $persons->search({ name => 'Bruce' })->single(sub {
+        my($persons, $obj) = @_;
+        $obj->cats(sub {
+          my($obj, $err, $cats) = @_;
+          $_->remove(sub {}) for @$cats;
+        });
+      });
 
 DESCRIPTION
-    Mandel is a simplistic model layer using the Mango module to interact
-    with a MongoDB backend. This class defines the overall model, including
-    high level interaction. Individual results, called Types inherit from
-    Mandel::Document.
+    Mandel is an async object-document-mapper. It allows you to work with
+    your MongoDB documents in Perl as objects.
 
-WARNING
-    This code is at BEST alpha quality and anything can and will change or
-    break. DO NOT USE IN PRODUCTION CODE!
+    This class binds it all together:
+
+    *   Mandel::Description
+
+        An object describing a document.
+
+    *   Mandel::Collection
+
+        A collection of Mandel documents.
+
+    *   Mandel::Document
+
+        A single MongoDB document with logic.
 
 ATTRIBUTES
     Mandel inherits all attributes from Mojo::Base and implements the
@@ -51,6 +71,10 @@ ATTRIBUTES
 
   uri
     The uri used by Mango to connect to the MongoDB server.
+
+    IMPORTANT! It requires the database to be part of the URI. Example:
+
+      mongodb://localhost/my_database_name
 
 METHODS
     Mandel inherits all methods from Mojo::Base and implements the following

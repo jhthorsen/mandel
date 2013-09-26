@@ -2,7 +2,7 @@ package Mandel::Document;
 
 =head1 NAME
 
-Mandel::Document - Collection Types for Mandel
+Mandel::Document - A single MongoDB document with logic
 
 =head1 SYNOPSIS
 

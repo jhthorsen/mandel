@@ -4,6 +4,11 @@ package Mandel::Description;
 
 Mandel::Description - An object describing a document
 
+=head1 DESCRIPTION
+
+This class is used to descrieb the structure of L<document|Mandel::Document>
+in mongodb.
+
 =cut
 
 use Mojo::Base -base;
@@ -16,7 +21,11 @@ my $LOADER = Mojo::Loader->new;
 
 =head2 collection
 
+The name of the collection in the database.
+
 =head2 document_class
+
+The class name of the document this description is attached to.
 
 =cut
 
@@ -30,7 +39,7 @@ has document_class => '';
   $self = $self->add_field('name');
   $self = $self->add_field(['name1', 'name2']);
 
-Used to add new field(s) to this document.
+Used to define new field(s) to the document.
 
 =cut
 
@@ -58,7 +67,11 @@ sub add_field {
 
 =head2 add_relationship
 
-  $self->add_relationship(has_one => $field_name => 'Other::Document::Class');
+  $self = $self->add_relationship(
+            $type => $field_name => 'Other::Document::Class'
+          );
+
+This method is used to describe a relationship two documents.
 
 See L<Mandel::Relationship::HasMany> and L<Mandel::Relationship::HasOne>.
 

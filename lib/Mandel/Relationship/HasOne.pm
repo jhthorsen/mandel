@@ -82,7 +82,7 @@ sub _other_object {
 
 =head1 SEE ALSO
 
-L<Mojolicious>, L<Mango>, L<Mandel>
+L<Mojolicious>, L<Mango>, L<Mandel::Relationship>
 
 =head1 AUTHOR
 

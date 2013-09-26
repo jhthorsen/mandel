@@ -2,7 +2,22 @@ package Mandel::Collection;
 
 =head1 NAME
 
-Mandel::Collection - A grouping of MongoDB documents
+Mandel::Collection - A collection of Mandel documents
+
+=head1 SYNOPSIS
+
+  my $model = MyModel->new(uri => ...);
+  my $persons = $model->collection('person');
+
+  $persons->count(sub {
+    my($persons, $err, $int) = @_;
+  });
+
+  # ...
+
+=head1 DESCRIPTION
+
+This class is used to describe a group of mongodb documents.
 
 =cut
 
@@ -13,7 +28,11 @@ use Scalar::Util 'blessed';
 
 =head2 document_class
 
+The class name of the documents this collection can hold.
+
 =head2 model
+
+An object that inherit from L<Mandel>.
 
 =cut
 
@@ -40,6 +59,9 @@ has _cursor => sub {
 =head2 all
 
   $self = $self->all(sub { my($self, $err, $docs) = @_; });
+
+Retrieves all documents from the database that match the given L</search>
+query.
 
 =cut
 
@@ -81,6 +103,8 @@ sub create {
 
   $self = $self->count(sub { my($self, $err, $int) = @_; });
 
+Used to count how many documents the current L</search> query match.
+
 =cut
 
 sub count {
@@ -96,7 +120,9 @@ sub count {
 
 =head2 distinct
 
-  $self = $self->distinct('field_name', sub { my($self, $err, $value) = @_; });
+  $self = $self->distinct("field_name", sub { my($self, $err, $value) = @_; });
+
+Get all distinct values for key in this collection.
 
 =cut
 
@@ -115,6 +141,8 @@ sub distinct {
 
   $self = $self->next(sub { my($self, $err, $obj) = @_; ... });
 
+Fetch next document.
+
 =cut
 
 sub next {
@@ -132,6 +160,8 @@ sub next {
 
   $self = $self->remove(\%query, \%extra, sub { my($self, $err, $doc) = @_; });
 
+Remove the documents that match the given query.
+
 =cut
 
 sub remove {
@@ -144,19 +174,37 @@ sub remove {
 
 =head2 rewind
 
-  $self = $self->rewind;
+  $self = $self->rewind($cb);
+
+Rewind cursor and kill it on the server
 
 =cut
 
 sub rewind {
-  my $self = shift;
-  $self->_cursor->rewind if $self->{_cursor};
+  my($self, $cb) = @_;
+
+  if($self->{_cursor}) {
+    $self->_cursor->rewind(sub {
+      $self->$cb($_[1]);
+    });
+  }
+  else {
+    $self->$cb('');
+  }
+
   $self;
 }
 
 =head2 search
 
   $clone = $self->search(\%query, \%extra);
+
+Return a clone of the given collection, but with different C<%search> and
+C<%extra> parameters. You can chain these calls to make the query more
+precise.
+
+C<%extra> will be used to set extra parameters on the L<Mango::Cursor>, where
+all the keys need to match the L<Mango::Cursor/ATTRIBUTES>.
 
 =cut
 
@@ -175,6 +223,9 @@ sub search {
 =head2 single
 
   $self = $self->single(sub { my($self, $err, $obj) = @_; });
+
+Will return the first object found in the callback, matching the given
+C<%search> query.
 
 =cut
 
