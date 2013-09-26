@@ -29,9 +29,9 @@ ATTRIBUTES
     An instance of Mango which acts as the database connection. If not
     provided, one will be lazily created using the "uri" attribute.
 
-  namespace
-    The namespace which will be searched when looking for Types. By default,
-    the (sub)class name of this module.
+  namespaces
+    The namespaces which will be searched when looking for Types. By
+    default, the (sub)class name of this module.
 
   uri
     The uri used by Mango to connect to the MongoDB server.
@@ -46,7 +46,7 @@ METHODS
     document classes.
 
   all_document_names
-    Returns a list of all the documents in the "namespace".
+    Returns a list of all the documents in the "namespaces".
 
   class_for
     Given a document name, find the related class name, ensure that it is

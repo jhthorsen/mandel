@@ -42,6 +42,8 @@ use Carp;
 our $VERSION = '0.01';
 $VERSION = eval $VERSION;
 
+my $LOADER = Mojo::Loader->new;
+
 =head1 ATTRIBUTES
 
 L<Mandel> inherits all attributes from L<Mojo::EventEmitter> and implements
@@ -52,9 +54,9 @@ the following new ones.
 An instance of L<Mango> which acts as the database connection. If not
 provided, one will be lazily created using the L</uri> attribute.
 
-=head2 namespace
+=head2 namespaces
 
-The namespace which will be searched when looking for Types. By default, the
+The namespaces which will be searched when looking for Types. By default, the
 (sub)class name of this module.
 
 =head2 uri
@@ -63,9 +65,9 @@ The uri used by L<Mango> to connect to the MongoDB server.
 
 =cut
 
-has mango     => sub { Mango->new( shift->uri or croak 'Please provide a uri' ) };
-has namespace => sub { my $self = shift; ref $self or $self };
-has uri       => 'mongodb://localhost/mangomodeltest';
+has mango => sub { Mango->new( shift->uri or croak 'Please provide a uri' ) };
+has namespaces => sub { [ ref $_[0] ] };
+has uri => 'mongodb://localhost/mangomodeltest';
 
 =head1 METHODS
 
@@ -92,32 +94,41 @@ sub initialize {
 
 =head2 all_document_names
 
-Returns a list of all the documents in the L</namespace>.
+Returns a list of all the documents in the L</namespaces>.
 
 =cut
 
 sub all_document_names {
-  my $self = shift;
-  my $namespace = $self->namespace;
-  my $modules = Mojo::Loader->new->search( $namespace );
-  map { s/^${namespace}:://; $_ } @$modules;
+  map {
+    my $ns = $_;
+    my $found = $LOADER->search($ns);
+    s/^${ns}::// for @$found;
+    @$found;
+  } @{ $_[0]->namespaces };
 }
 
 =head2 class_for
 
-Given a document name, find the related class name, ensure that it is loaded (or
-else die) and return it.
+Given a document name, find the related class name, ensure that it is loaded
+(or else die) and return it.
 
 =cut
 
 sub class_for {
   my ($self, $name) = @_;
-  my $class = $self->namespace . '::' . $name;
-  if ( !$self->{loaded}{$class} and Mojo::Loader->new->load($class) ) {
-    die $@; # rethrow
+
+  if(my $class = $self->{loaded}{$name}) {
+    return $class;
   }
-  $self->{loaded}{$class} = $name;
-  $class;
+
+  for my $ns (@{ $self->namespaces }) {
+    my $class = $ns . '::' . $name;
+    my $e = $LOADER->load($class);
+    return $self->{loaded}{$name} = $class unless $e;
+    die $e if ref $e;
+  }
+
+  Carp::carp "Could not find class for $name";
 }
 
 =head2 create
