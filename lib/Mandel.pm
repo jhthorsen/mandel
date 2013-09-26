@@ -21,6 +21,17 @@ L<Mandel::Document>.
 This code is at BEST alpha quality and anything can and will change or break.
 DO NOT USE IN PRODUCTION CODE!
 
+=head1 TODO
+
+I want to replicate L<DBIx::Class> to some extent:
+L<DBIx::Class::FilterColumn>,
+L<DBIx::Class::InflateColumn>,
+L<DBIx::Class::Relationship> and friends,
+L<DBIx::Class::ResultSet>,
+L<DBIx::Class::ResultSource>,
+L<DBIx::Class::Row> and
+L<DBIx::Class::Schema>.
+
 =cut
 
 use Mojo::Base 'Mojo::EventEmitter';

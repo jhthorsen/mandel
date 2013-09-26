@@ -15,6 +15,12 @@ WARNING
     This code is at BEST alpha quality and anything can and will change or
     break. DO NOT USE IN PRODUCTION CODE!
 
+TODO
+    I want to replicate DBIx::Class to some extent:
+    DBIx::Class::FilterColumn, DBIx::Class::InflateColumn,
+    DBIx::Class::Relationship and friends, DBIx::Class::ResultSet,
+    DBIx::Class::ResultSource, DBIx::Class::Row and DBIx::Class::Schema.
+
 EVENTS
     Mandel inherits all events from Mojo::EventEmitter and implements the
     following new ones.
