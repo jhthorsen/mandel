@@ -37,6 +37,7 @@ L<DBIx::Class::Schema>.
 use Mojo::Base 'Mojo::Base';
 use Mojo::Loader;
 use Mojo::Util;
+use Mandel::Collection;
 use Mango;
 use Carp;
 
@@ -86,7 +87,7 @@ sub initialize {
   my $self = shift;
   my @documents = @_ ? @_ : $self->all_document_names;
 
-  foreach my $document ( @documents ) {
+  for my $document ( @documents ) {
     my $class = $self->class_for($document);
     my $collection = $self->mango->db->collection($class->collection);
     $class->initialize($self, $collection);
@@ -138,83 +139,20 @@ sub class_for {
   Carp::carp "Could not find class for $name";
 }
 
-=head2 create
+=head2 collection
 
- my $head2 = $model->create('Type');
- my $head2 = $model->create('Type', \%mongodb_doc);
-
-Create an unpopulated instance of a given document. The primary reason to use this
-over the normal constructor is for class name resolution and proper handling
-of certain document attributes.
-
-It is also possible to pass on a C<%mongodb_doc> which will populate all the
-L<fields|Mandel::Document/field> defined in the C<Type>.
+  $collection_obj = $self->collection($name);
 
 =cut
 
-sub create {
-  my ($self, $name, $raw) = @_;
-  $self->_create_from_class( $self->class_for($name), $raw );
-}
+sub collection {
+  my($self, $name) = @_;
+  my $document_class = $self->class_for($name);
 
-sub _create_from_class {
-  my ($self, $class, $raw) = @_;
-
-  return $class->new(
-    model   => $self,
-    updated => 1,
-    $raw ? (_raw => $raw) : (),
+  Mango::Collection->new(
+    document_class => $document_class,
+    model => $self,
   );
-}
-
-=head2 find_one
-
-Takes a document name and a query document. Given that query it performs a
-C<find_one> and constructs an instance of that document from the result. If no
-result is found then it returns a false value.
-
-=cut
-
-sub find_one {
-  my ($self, $name, $query, $cb) = @_;
-  my $class = $self->class_for($name);
-  my $collection = $self->mango->db->collection($class->collection);
-  if ( $cb ) {
-    $collection->find_one( $query, sub {
-      my ($collection, $error, $doc) = @_;
-      my $obj = $self->_create_from_class( $class, $doc );
-      $cb->($self, $error, $obj);
-    });
-    return;
-  }
-  return unless my $raw = $collection->find_one($query);
-  $self->_create_from_class( $class, $raw );
-}
-
-=head2 count
-
-Returns the count of documents in the collection associated with a given
-document name.
-
-=cut
-
-sub count {
-  my ($self, $name) = @_;
-  my $class = $self->class_for($name);
-  my $collection = $class->collection;
-  $self->mango->db->collection($collection)->find->count;
-}
-
-=head2 drop_database
-
-Drops the database that your L<Mango> instance points to. Obviously this
-method should be used with care.
-
-=cut
-
-sub drop_database {
-  my $self = shift;
-  $self->mango->db->command('dropDatabase');
 }
 
 =head1 SEE ALSO
