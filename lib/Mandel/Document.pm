@@ -71,11 +71,15 @@ will be saved.
 =cut
 
 has autosave => 1;
-has model    => sub { croak 'Must have a model object reference' };
-has updated  => 0;
+has model => sub { croak 'Must have a model object reference' };
+has updated => 0;
 
-# holds the raw data
-has _raw => sub { {} };
+has _collection => sub {
+  my $self = shift;
+  $self->model->mango->db->collection($self->collection);
+};
+
+has _raw => sub { +{} }; # raw mongodb document data
 
 =head1 IMPORTING AND EXPORTED FUNCTIONS
 
@@ -98,7 +102,7 @@ sub import {
     $collection .= 's' unless $collection =~ /s$/;
   }
 
-  Mojo::Util::monkey_patch($caller, field => sub { _field($caller, @_) });
+  Mojo::Util::monkey_patch($caller, field => sub { add_field($caller, @_) });
   Mojo::Util::monkey_patch($caller, collection => sub { $collection }) if $collection;
   push @_, __PACKAGE__;
   goto &Mojo::Base::import;
@@ -121,6 +125,37 @@ sub new {
   $self;
 }
 
+=head2 add_field
+
+  $class = $class->add_field('name');
+  $class = $class->add_field(['name1', 'name2']);
+
+Used to add new field(s) to this document.
+
+=cut
+
+sub add_field {
+  my($class, $fields) = @_;
+  return unless ($class = ref $class || $class) && $fields;
+
+  # Compile fieldibutes
+  for my $field (@{ref $fields eq 'ARRAY' ? $fields : [$fields]}) {
+    my $code = "package $class;\nsub $field {\n my \$r = \$_[0]->_raw;";
+    $code .= "if (\@_ == 1) {\n";
+    $code .= "    \$_[0]->{updated}=1;";
+    $code .= "    return \$r->{'$field'};";
+    $code .= "\n  }\n  \$r->{'$field'} = \$_[1];\n";
+    $code .= "  \$_[0];\n}";
+
+    # We compile custom attribute code for speed
+    no strict 'refs';
+    warn "-- Attribute $field in $class\n$code\n\n" if $ENV{MOJO_BASE_DEBUG};
+    Carp::croak "Mandel::Document error: $@" unless eval "$code;1";
+  }
+
+  $class;
+}
+
 =head2 initialize
 
 A no-op placeholder useful for initialization (see L<Mandel/initialize>)
@@ -139,6 +174,34 @@ implementation will die.
 
 sub collection { croak 'collection must be overloaded by subclass' }
 
+=head2 remove
+
+  $self = $self->remove(sub { my($self, $err) = @_; })
+  $bool = $self->remove;
+
+Will remove this object from the L</collection>, set L</autosave> to 0 and
+L</updated> to 1.
+
+=cut
+
+sub remove {
+  my($self, $cb) = @_;
+
+  if($cb) {
+    $self->_collection->remove({ _id => $self->id }, sub {
+      my($collection, $err, $doc);
+      $self->updated(1)->autosave(0) if $doc->{n};
+      $self->$cb($err);
+    });
+    return $self;
+  }
+  else {
+    $self->_collection->remove({ _id => $self->id });
+    $self->updated(1)->autosave(0);
+    return 1; # TODO
+  }
+}
+
 =head2 save
 
 This method stores the raw data in the database and collection. It also sets
@@ -149,6 +212,8 @@ of scope if and only if L</autosave> and L</updated> are both true.
 
 sub save {
   my($self, $cb) = @_;
+
+  $self->id; # make sure we have an ObjectID
 
   if($cb) {
     $self->_collection->save($self->_raw, sub {
@@ -165,36 +230,9 @@ sub save {
   $self;
 }
 
-# returns a Mango::Collection object for the named collection,
-# perhaps this should be a public method
-sub _collection {
-  my $self = shift;
-  $self->model->mango->db->collection($self->collection);
-}
-
-sub _field {
-  my ($class, $fields) = @_;
-  return unless ($class = ref $class || $class) && $fields;
-
-  # Compile fieldibutes
-  for my $field (@{ref $fields eq 'ARRAY' ? $fields : [$fields]}) {
-    my $code = "package $class;\nsub $field {\n my \$r = \$_[0]->_raw;";
-    $code .= "if (\@_ == 1) {\n";
-    $code .= "    \$_[0]->{updated}=1;";
-    $code .= "    return \$r->{'$field'};";
-    $code .= "\n  }\n  \$r->{'$field'} = \$_[1];\n";
-    $code .= "  \$_[0];\n}";
-
-    # We compile custom attribute code for speed
-    no strict 'refs';
-    warn "-- Attribute $field in $class\n$code\n\n" if $ENV{MOJO_BASE_DEBUG};
-    Carp::croak "Mandel::Document error: $@" unless eval "$code;1";
-  }
-}
-
 sub DESTROY {
   my $self = shift;
-  $self->save if $self->autosave && $self->updated;
+  $self->save if $self->autosave and $self->updated;
 }
 
 =head1 SEE ALSO
