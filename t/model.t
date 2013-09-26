@@ -19,7 +19,7 @@ $model->drop_database;
 {
   my $item = $model->create( 'Menu' );
   $item->soup( 'tomato' );
-  ok $item->updated, 'new item marked as updated'; 
+  ok $item->updated, 'new item marked as updated';
 }
 
 is $model->count( 'Menu' ), 1, 'item inserted';
@@ -46,8 +46,8 @@ is $model->count( 'Menu' ), 1, 'item inserted';
   });
 
   Mojo::IOLoop->start;
-  ok $item_isa,  'model is correct type';
-  ok $model_isa, 'item is correct type';
+  ok $item_isa,  'model isa correct class';
+  ok $model_isa, 'item isa correct class';
   ok $found,     'found item (non-blocking)';
 }
 

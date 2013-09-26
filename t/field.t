@@ -1,4 +1,4 @@
-package MyType;
+package MyDocument;
 use Mandel::Document;
 
 field 'foo';
@@ -8,18 +8,18 @@ package main;
 use Mojo::Base -strict;
 use Test::More;
 
-can_ok 'MyType', 'foo';
-can_ok 'MyType', 'bar';
-can_ok 'MyType', 'baz';
+can_ok 'MyDocument', 'foo';
+can_ok 'MyDocument', 'bar';
+can_ok 'MyDocument', 'baz';
 
-my $type = MyType->new;
+my $doc = MyDocument->new;
 
-is $type->foo, undef, 'foo is undef';
+is $doc->foo, undef, 'foo is undef';
 
-$type->_raw->{bar} = 123;
-is $type->bar, 123, 'bar is 123';
+$doc->_raw->{bar} = 123;
+is $doc->bar, 123, 'bar is 123';
 
-is $type->baz(42), $type, 'baz setter return self';
-is $type->baz, 42, 'baz is 42';
+is $doc->baz(42), $doc, 'baz setter return self';
+is $doc->baz, 42, 'baz is 42';
 
 done_testing;

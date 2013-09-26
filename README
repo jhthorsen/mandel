@@ -41,40 +41,36 @@ METHODS
     new ones.
 
   initialize
-    No-op placeholder which is not called by default. This name is reserved
-    for subclasses to define initialization functions (which it would have
-    to call itself).
+    Takes a list of document names. Calls the "initialize" method of any
+    document names passed in or if no names are passed then for all found
+    document classes.
 
-  initialize_types
-    Takes a list of type names. Calls the "initialize" method of any type
-    names passed in or if no names are passed then for all found types.
-
-  all_types
-    Returns a list of all the types in the "namespace".
+  all_document_names
+    Returns a list of all the documents in the "namespace".
 
   class_for
-    Given a type name, find the related class name, ensure that it is loaded
-    (or else die) and return it.
+    Given a document name, find the related class name, ensure that it is
+    loaded (or else die) and return it.
 
   create
      my $head2 = $model->create('Type');
      my $head2 = $model->create('Type', \%mongodb_doc);
 
-    Create an unpopulated instance of a given type. The primary reason to
-    use this over the normal constructor is for class name resolution and
-    proper handling of certain type attributes.
+    Create an unpopulated instance of a given document. The primary reason
+    to use this over the normal constructor is for class name resolution and
+    proper handling of certain document attributes.
 
     It is also possible to pass on a %mongodb_doc which will populate all
     the fields defined in the "Type".
 
   find_one
-    Takes a type name and a query document. Given that query it performs a
-    "find_one" and constructs an instance of that type from the result. If
-    no result is found then it returns a false value.
+    Takes a document name and a query document. Given that query it performs
+    a "find_one" and constructs an instance of that document from the
+    result. If no result is found then it returns a false value.
 
   count
     Returns the count of documents in the collection associated with a given
-    type name.
+    document name.
 
   drop_database
     Drops the database that your Mango instance points to. Obviously this

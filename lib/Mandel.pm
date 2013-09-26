@@ -74,59 +74,49 @@ new ones.
 
 =head2 initialize
 
-No-op placeholder which is not called by default. This name is reserved for
-subclasses to define initialization functions (which it would have to call
-itself).
+Takes a list of document names. Calls the C<initialize> method of any document
+names passed in or if no names are passed then for all found document classes.
 
 =cut
 
-sub initialize {}
-
-=head2 initialize_types
-
-Takes a list of type names. Calls the C<initialize> method of any type names
-passed in or if no names are passed then for all found types.
-
-=cut
-
-sub initialize_types {
+sub initialize {
   my $self = shift;
-  my @types = @_ ? @_ : $self->all_types;
+  my @documents = @_ ? @_ : $self->all_document_names;
 
-  foreach my $type ( @types ) {
-    my $class = $self->class_for($type);
+  foreach my $document ( @documents ) {
+    my $class = $self->class_for($document);
     my $collection = $self->mango->db->collection($class->collection);
     $class->initialize($self, $collection);
   }
 }
 
-=head2 all_types
+=head2 all_document_names
 
-Returns a list of all the types in the L</namespace>.
+Returns a list of all the documents in the L</namespace>.
 
 =cut
 
-sub all_types {
+sub all_document_names {
   my $self = shift;
   my $namespace = $self->namespace;
   my $modules = Mojo::Loader->new->search( $namespace );
-  return map { my $m = $_; $m =~ s/^${namespace}:://; $m } @$modules;
+  map { s/^${namespace}:://; $_ } @$modules;
 }
 
 =head2 class_for
 
-Given a type name, find the related class name, ensure that it is loaded (or
+Given a document name, find the related class name, ensure that it is loaded (or
 else die) and return it.
 
 =cut
 
 sub class_for {
-  my ($self, $type) = @_;
-  my $class = $self->namespace . '::' . $type;
+  my ($self, $name) = @_;
+  my $class = $self->namespace . '::' . $name;
   if ( !$self->{loaded}{$class} and Mojo::Loader->new->load($class) ) {
     die $@; # rethrow
   }
-  $self->{loaded}{$class} = $type;
+  $self->{loaded}{$class} = $name;
   $class;
 }
 
@@ -135,9 +125,9 @@ sub class_for {
  my $head2 = $model->create('Type');
  my $head2 = $model->create('Type', \%mongodb_doc);
 
-Create an unpopulated instance of a given type. The primary reason to use this
+Create an unpopulated instance of a given document. The primary reason to use this
 over the normal constructor is for class name resolution and proper handling
-of certain type attributes.
+of certain document attributes.
 
 It is also possible to pass on a C<%mongodb_doc> which will populate all the
 L<fields|Mandel::Document/field> defined in the C<Type>.
@@ -145,8 +135,8 @@ L<fields|Mandel::Document/field> defined in the C<Type>.
 =cut
 
 sub create {
-  my ($self, $type, $raw) = @_;
-  $self->_create_from_class( $self->class_for($type), $raw );
+  my ($self, $name, $raw) = @_;
+  $self->_create_from_class( $self->class_for($name), $raw );
 }
 
 sub _create_from_class {
@@ -161,15 +151,15 @@ sub _create_from_class {
 
 =head2 find_one
 
-Takes a type name and a query document. Given that query it performs a
-C<find_one> and constructs an instance of that type from the result. If no
+Takes a document name and a query document. Given that query it performs a
+C<find_one> and constructs an instance of that document from the result. If no
 result is found then it returns a false value.
 
 =cut
 
 sub find_one {
-  my ($self, $type, $query, $cb) = @_;
-  my $class = $self->class_for($type);
+  my ($self, $name, $query, $cb) = @_;
+  my $class = $self->class_for($name);
   my $collection = $self->mango->db->collection($class->collection);
   if ( $cb ) {
     $collection->find_one( $query, sub {
@@ -185,16 +175,16 @@ sub find_one {
 
 =head2 count
 
-Returns the count of documents in the collection associated with a given type
-name.
+Returns the count of documents in the collection associated with a given
+document name.
 
 =cut
 
 sub count {
-  my ($self, $type) = @_;
-  my $class = $self->class_for($type);
+  my ($self, $name) = @_;
+  my $class = $self->class_for($name);
   my $collection = $class->collection;
-  return $self->mango->db->collection($collection)->find->count;
+  $self->mango->db->collection($collection)->find->count;
 }
 
 =head2 drop_database

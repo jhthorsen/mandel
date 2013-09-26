@@ -7,7 +7,7 @@ Mandel::Document - Collection Types for Mandel
 =head1 SYNOPSIS
 
   package MyModel::MyType;
-  use Mandel::Document 'mytype_collection_name';
+  use Mandel::Document 'some_collection_name';
 
 =head1 DESCRIPTION
 
@@ -121,8 +121,7 @@ sub new {
 
 =head2 initialize
 
-A no-op placeholder useful for initialization (see C<initialize_types> in
-L<Mandel>).
+A no-op placeholder useful for initialization (see L<Mandel/initialize>)
 
 =cut
 

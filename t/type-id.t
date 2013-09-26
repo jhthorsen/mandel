@@ -2,21 +2,21 @@ use Mojo::Base -strict;
 use Test::More;
 use Mandel::Document;
 
-my $type = Mandel::Document->new;
+my $doc = Mandel::Document->new;
 
-isa_ok $type->id, 'Mango::BSON::ObjectID';
+isa_ok $doc->id, 'Mango::BSON::ObjectID';
 
-$type->id('507f1f77bcf86cd799439011');
-isa_ok $type->id, 'Mango::BSON::ObjectID';
-is $type->id->to_string, '507f1f77bcf86cd799439011', 'set from string';
+$doc->id('507f1f77bcf86cd799439011');
+isa_ok $doc->id, 'Mango::BSON::ObjectID';
+is $doc->id->to_string, '507f1f77bcf86cd799439011', 'set from string';
 
-$type->id(Mango::BSON::ObjectID->new);
-ok $type->id->to_string, 'set from object';
-isnt $type->id->to_string, '507f1f77bcf86cd799439011', 'changed string';
-$type->autosave(0);
+$doc->id(Mango::BSON::ObjectID->new);
+ok $doc->id->to_string, 'set from object';
+isnt $doc->id->to_string, '507f1f77bcf86cd799439011', 'changed string';
+$doc->autosave(0);
 
-$type = Mandel::Document->new(id => '507f1f77bcf86cd799439011');
-is $type->id->to_string, '507f1f77bcf86cd799439011', 'set in constructor';
-$type->autosave(0);
+$doc = Mandel::Document->new(id => '507f1f77bcf86cd799439011');
+is $doc->id->to_string, '507f1f77bcf86cd799439011', 'set in constructor';
+$doc->autosave(0);
 
 done_testing;
