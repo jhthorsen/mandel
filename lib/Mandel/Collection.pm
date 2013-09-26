@@ -22,7 +22,7 @@ has model => sub { die "Required in constructor" };
 
 has _collection => sub {
   my $self = shift;
-  $self->model->mango->db->collection($self->document_class->collection);
+  $self->model->mango->db->collection($self->document_class->description->collection);
 };
 
 has _cursor => sub {

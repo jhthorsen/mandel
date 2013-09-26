@@ -19,8 +19,9 @@ from L<Mandel::Document>.
 =cut
 
 use Mojo::Base 'Mojo::Base';
-use Mango::BSON::ObjectID;
 use Mojo::Util;
+use Mango::BSON::ObjectID;
+use Mandel::Description;
 use Carp;
 
 =head1 ATTRIBUTES
@@ -45,13 +46,10 @@ sub id {
   my $self = shift;
   my $raw = $self->_raw;
 
-  if ( @_ ) {
-    $self->updated(1);
-    $raw->{_id} = ref $_[0] ? $_[0] : Mango::BSON::ObjectID->new($_[0]);
-    return $self;
-  }
-
-  return $raw->{_id} ||= Mango::BSON::ObjectID->new;
+  return $raw->{_id} ||= Mango::BSON::ObjectID->new unless @_;
+  $self->updated(1);
+  $raw->{_id} = ref $_[0] ? $_[0] : Mango::BSON::ObjectID->new($_[0]);
+  return $self;
 }
 
 =head2 autosave
@@ -76,42 +74,20 @@ has updated => 0;
 
 has _collection => sub {
   my $self = shift;
-  $self->model->mango->db->collection($self->collection);
+  $self->model->mango->db->collection($self->description->collection);
 };
 
 has _raw => sub { +{} }; # raw mongodb document data
-
-=head1 IMPORTING AND EXPORTED FUNCTIONS
-
-Type definition subclasses should import the base class with an argument which
-is the collection name to be connected to in the MongoDB database (see the
-L</SYNOPSIS>). This imports the C<has> attribute creator from L<Mojo::Base> as
-well as the F<field> creator which defines an accessor method for that field
-connected to the stored data. Note that as yet no default values are possible
-and values may not be passed to the constructor; the accessors are the only
-way to get and set these values.
-
-=cut
-
-sub import {
-  my $caller = caller;
-  my $collection = shift;
-
-  unless(defined $collection) {
-    $collection = Mojo::Util::decamelize($caller =~ /::(\w+)$/);
-    $collection .= 's' unless $collection =~ /s$/;
-  }
-
-  Mojo::Util::monkey_patch($caller, field => sub { add_field($caller, @_) });
-  Mojo::Util::monkey_patch($caller, collection => sub { $collection }) if $collection;
-  push @_, __PACKAGE__;
-  goto &Mojo::Base::import;
-}
 
 =head1 METHODS
 
 L<Mandel::Document> inherits all of the methods from L<Mojo::Base> and
 implements the following new ones.
+
+=head2 description
+
+Returns a L<Mandel::Description> object. This object is a class variable and
+therefor shared between all instances.
 
 =head2 new
 
@@ -125,37 +101,6 @@ sub new {
   $self;
 }
 
-=head2 add_field
-
-  $class = $class->add_field('name');
-  $class = $class->add_field(['name1', 'name2']);
-
-Used to add new field(s) to this document.
-
-=cut
-
-sub add_field {
-  my($class, $fields) = @_;
-  return unless ($class = ref $class || $class) && $fields;
-
-  # Compile fieldibutes
-  for my $field (@{ref $fields eq 'ARRAY' ? $fields : [$fields]}) {
-    my $code = "package $class;\nsub $field {\n my \$r = \$_[0]->_raw;";
-    $code .= "if (\@_ == 1) {\n";
-    $code .= "    \$_[0]->{updated}=1;";
-    $code .= "    return \$r->{'$field'};";
-    $code .= "\n  }\n  \$r->{'$field'} = \$_[1];\n";
-    $code .= "  \$_[0];\n}";
-
-    # We compile custom attribute code for speed
-    no strict 'refs';
-    warn "-- Attribute $field in $class\n$code\n\n" if $ENV{MOJO_BASE_DEBUG};
-    Carp::croak "Mandel::Document error: $@" unless eval "$code;1";
-  }
-
-  $class;
-}
-
 =head2 initialize
 
 A no-op placeholder useful for initialization (see L<Mandel/initialize>)
@@ -163,16 +108,6 @@ A no-op placeholder useful for initialization (see L<Mandel/initialize>)
 =cut
 
 sub initialize {}
-
-=head2 collection
-
-This (static) method should provide the name of the collection that Mango uses
-to store the data. This may be set by the C<import> method. The default
-implementation will die.
-
-=cut
-
-sub collection { croak 'collection must be overloaded by subclass' }
 
 =head2 remove
 
@@ -228,6 +163,31 @@ sub save {
   }
 
   $self;
+}
+
+=head2 import
+
+See L</SYNOPSIS>.
+
+=cut
+
+sub import {
+  my($class, $collection) = @_;
+  my $caller = caller;
+  my $description = Mandel::Description->new(document_class => $caller);
+
+  unless($collection) {
+    $collection = Mojo::Util::decamelize(($caller =~ /(\w+)$/)[0]);
+    $collection .= 's' unless $collection =~ /s$/;
+  }
+
+  $description->collection($collection);
+
+  Mojo::Util::monkey_patch($caller, description => sub { $description });
+  Mojo::Util::monkey_patch($caller, field => sub { $description->add_field(@_) });
+
+  @_ = ($class, __PACKAGE__);
+  goto &Mojo::Base::import;
 }
 
 sub DESTROY {
