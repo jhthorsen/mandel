@@ -77,7 +77,6 @@ use Mango;
 use Carp;
 
 our $VERSION = '0.01';
-$VERSION = eval $VERSION;
 
 my $LOADER = Mojo::Loader->new;
 

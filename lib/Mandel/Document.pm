@@ -9,6 +9,12 @@ Mandel::Document - A single MongoDB document with logic
   package MyModel::MyType;
   use Mandel::Document 'some_collection_name';
 
+  package MyModel::MyType;
+  use Mandel::Document (
+    collection => 'some_collection_name',
+    collection_class => 'My::Custom::Collection',
+  );
+
 =head1 DESCRIPTION
 
 L<Mandel> is a simplistic model layer using the L<Mango> module to interact
@@ -266,16 +272,16 @@ See L</SYNOPSIS>.
 =cut
 
 sub import {
-  my($class, $collection) = @_;
+  my $class = shift;
+  my %args = @_ == 1 ? (collection => shift) : @_;
   my $caller = caller;
-  my $model = Mandel::Model->new(document_class => $caller);
+  my $model = Mandel::Model->new(document_class => $caller, %args);
 
-  unless($collection) {
-    $collection = Mojo::Util::decamelize(($caller =~ /(\w+)$/)[0]);
-    $collection .= 's' unless $collection =~ /s$/;
+  unless($args{collection}) {
+    $args{collection} = Mojo::Util::decamelize(($caller =~ /(\w+)$/)[0]);
+    $args{collection} .= 's' unless $args{collection} =~ /s$/;
+    $model->collection($args{collection});
   }
-
-  $model->collection($collection);
 
   monkey_patch $caller, field => sub { $model->add_field(@_) };
   monkey_patch $caller, has_many => sub { $model->add_relationship(has_many => @_) };
