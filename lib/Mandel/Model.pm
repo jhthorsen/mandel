@@ -23,7 +23,7 @@ my $ANON = 1;
 
 =head2 collection
 
-The name of the collection in the database.
+The name of the collection in the database. Default is the plural form of L</name>.
 
 =head2 collection_class
 
@@ -41,7 +41,14 @@ L<Mandel/collection>.
 
 =cut
 
-has collection => sub { confess "collection required in constructor" };
+has collection => sub {
+  my $self = shift;
+  my $name = $self->name;
+
+  return $name =~ /s$/ ? $name : $name .'s' if $name;
+  confess "collection or name required in constructor";
+};
+
 has collection_class => 'Mandel::Collection';
 
 has document_class => sub {

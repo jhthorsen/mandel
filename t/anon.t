@@ -21,11 +21,8 @@ my $cat = $connection->model(cat => {})->model('cat');
   $cat->collection_class('Custom::Collection');
   is $cat->collection_class, 'Custom::Collection', 'set collection_class';
   isa_ok $cat->collection_class, 'Mandel::Collection';
-}
 
-{
-  eval { $cat->collection };
-  like $@, qr{collection required in constructor}, 'collection is not set';
+  is $cat->collection, 'cats', 'collection generated from name';
 }
 
 done_testing;

@@ -22,6 +22,7 @@ This class is used to describe a group of mongodb documents.
 =cut
 
 use Mojo::Base -base;
+use Mandel::Iterator;
 use Scalar::Util 'blessed';
 use Carp 'confess';
 
@@ -43,16 +44,6 @@ has model => sub { confess "model required in constructor" };
 has _collection => sub {
   my $self = shift;
   $self->connection->_mango_collection($self->model->collection);
-};
-
-has _cursor => sub {
-  my $self = shift;
-  my $extra = $self->{extra} || {};
-  my $cursor = $self->_collection->find;
-
-  $cursor->query($self->{query}) if $self->{query};
-  $cursor->$_($extra->{$_}) for keys %$extra;
-  $cursor;
 };
 
 =head1 METHODS
@@ -132,23 +123,21 @@ sub distinct {
   $self;
 }
 
-=head2 next
+=head2 iterator
 
-  $self = $self->next(sub { my($self, $err, $obj) = @_; ... });
+  $iterator = $self->iterator;
 
-Fetch next document.
+Returns a L<Mandel::Iterator> object based on the L</search> performed.
 
 =cut
 
-sub next {
-  my($self, $cb) = @_;
+sub iterator {
+  my $self = shift;
 
-  $self->_cursor->next(sub {
-    my($cursor, $err, $doc) = @_;
-    $self->$cb($err, $doc ? $self->_new_document($doc, 1) : undef);
-  });
-
-  $self;
+  Mandel::Iterator->new(
+    cursor => $self->_cursor,
+    model => $self->model,
+  );
 }
 
 =head2 remove
@@ -164,29 +153,6 @@ sub remove {
   my $self = shift;
 
   $self->_collection->remove(@_, $cb);
-  $self;
-}
-
-=head2 rewind
-
-  $self = $self->rewind($cb);
-
-Rewind cursor and kill it on the server
-
-=cut
-
-sub rewind {
-  my($self, $cb) = @_;
-
-  if($self->{_cursor}) {
-    $self->_cursor->rewind(sub {
-      $self->$cb($_[1]);
-    });
-  }
-  else {
-    $self->$cb('');
-  }
-
   $self;
 }
 
@@ -208,8 +174,6 @@ sub search {
   my $class = blessed $self;
   my $clone = $class->new(%$self);
 
-  delete $clone->{_cursor};
-
   $clone->{extra}{$_} = $extra->{$_} for keys %{ $extra || {} };
   $clone->{query}{$_} = $query->{$_} for keys %{ $query || {} };
   $clone;
@@ -226,15 +190,24 @@ C<%search> query.
 
 sub single {
   my($self, $cb) = @_;
-  my $cursor = $self->_cursor->clone->limit(-1);
-
-  $cursor->next(sub {
+  
+  $self->_cursor->limit(-1)->next(sub {
     my($cursor, $err, $doc) = @_;
     $self->$cb($err, $doc ? $self->_new_document($doc, 1) : undef);
   });
 
   $self;
 }
+
+sub _cursor {
+  my $self = shift;
+  my $extra = $self->{extra} || {};
+  my $cursor = $self->_collection->find;
+
+  $cursor->query($self->{query}) if $self->{query};
+  $cursor->$_($extra->{$_}) for keys %$extra;
+  $cursor;
+};
 
 sub _new_document {
   my($self, $doc, $from_storage) = @_;
