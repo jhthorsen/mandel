@@ -10,8 +10,8 @@ my $cat = $connection->model(cat => {})->model('cat');
 
 {
   diag 'The class names might change';
-  is $person->document_class, 'Mandel::Document::__ANON__::DOC1', 'person document_class';
-  is $cat->document_class, 'Mandel::Document::__ANON__::DOC2', 'cat document_class';
+  is $person->document_class, 'Mandel::Document::__ANON_1__::Person', 'person document_class';
+  is $cat->document_class, 'Mandel::Document::__ANON_2__::Cat', 'cat document_class';
 }
 
 {

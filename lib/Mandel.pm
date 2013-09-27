@@ -222,6 +222,7 @@ sub model {
 
   if($model) {
     $model = Mandel::Model->new($model) if ref $model eq 'HASH';
+    $model->name($name);
     $self->{loaded}{$name} = $model->document_class;
     $self->{model}{$name} = $model;
     return $self;
