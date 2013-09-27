@@ -147,16 +147,16 @@ Returns a list of all the documents in the L</namespaces>.
 
 sub all_document_names {
   my $self = shift;
-  my @names;
+  my %names = map { $_, 1 } keys %{ $self->{model} || {} };
 
   for my $ns (@{ $self->namespaces }) {
     for my $name (@{ $LOADER->search($ns) }) {
       $name =~ s/^${ns}:://;
-      push @names, Mojo::Util::decamelize($name);
+      $names{ Mojo::Util::decamelize($name) } = 1;
     }
   }
 
-  @names;
+  keys %names;
 }
 
 =head2 class_for
