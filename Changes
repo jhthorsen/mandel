@@ -1,4 +1,10 @@
 Revision history for Mandel
 
-0.01
-       * Started project
+0.01     Fri Sep 27 18:55:40 2013
+       * Released alpha software
+       * Add document model
+       * Add document base class
+       * Add collection managment
+       * Add cursor
+       * Add support for basic relationship: has_one and has_many
+

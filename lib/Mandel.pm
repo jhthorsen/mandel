@@ -50,6 +50,9 @@ Mandel - Async model layer for MongoDB objects using Mango
 
 =head1 DESCRIPTION
 
+THIS IS ALPHA SOFTWARE! THE API MAY BE CHANGED AT ANY TIME!
+PLEASE CONTACT ME IF YOU HAVE ANY COMMENTS OR FEEDBACK.
+
 L<Mandel> is an async object-document-mapper. It allows you to work with your
 MongoDB documents in Perl as objects.
 
