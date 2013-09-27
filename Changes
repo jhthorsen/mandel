@@ -2,6 +2,7 @@ Revision history for Mandel
 
 0.02
        * Add Mandel::Collection::save()
+       * Add Mandel::Document::contains()
 
 0.01     Fri Sep 27 18:55:40 2013
        * Released alpha software

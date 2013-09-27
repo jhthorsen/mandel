@@ -131,11 +131,26 @@ A no-op placeholder useful for initialization (see L<Mandel/initialize>)
 
 sub initialize {}
 
+=head2 contains
+
+  $bool = $self->get('/json/2/pointer');
+
+Use L<Mojo::JSON::Pointer/contains> to check if a value exists inside the raw
+mongodb document.
+
+=cut
+
+sub contains {
+  my $self = shift;
+  $POINTER->contains($self->_raw, @_);
+}
+
 =head2 get
 
   $any = $self->get('/json/2/pointer');
 
-Use L<Mojo::JSON::Pointer> to retrieve a value inside the raw mongodb document.
+Use L<Mojo::JSON::Pointer/get> to retrieve a value inside the raw mongodb
+document.
 
 =cut
 

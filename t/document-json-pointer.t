@@ -42,6 +42,10 @@ my $doc = Mandel::Document->new;
 {
   is $doc->get('/person/2/bruce/age'), 42, 'get /person/2/bruce/age';
   is ref $doc->get('/person'), 'ARRAY', 'get /person';
+
+  ok $doc->contains('/person'), 'doc contains /person';
+  ok $doc->contains('/person/2/bruce/age'), 'doc contains /person/2/bruce/age';
+  ok !$doc->contains('/person/2/foo/age'), 'doc does not contain /person/2/foo/age';
 }
 
 done_testing;
