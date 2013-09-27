@@ -6,8 +6,8 @@ Mandel::Collection - A collection of Mandel documents
 
 =head1 SYNOPSIS
 
-  my $model = MyModel->new(uri => ...);
-  my $persons = $model->collection('person');
+  my $connection = MyModel->new(uri => ...);
+  my $persons = $connection->collection('person');
 
   $persons->count(sub {
     my($persons, $err, $int) = @_;
@@ -26,22 +26,22 @@ use Scalar::Util 'blessed';
 
 =head1 ATTRIBUTES
 
-=head2 document_class
-
-The class name of the documents this collection can hold.
-
-=head2 model
+=head2 connection
 
 An object that inherit from L<Mandel>.
 
+=head2 model
+
+An object that inherit from L<Mandel::Model>.
+
 =cut
 
-has document_class => sub { die "Required in constructor" };
-has model => sub { die "Required in constructor" };
+has connection => sub { die "connection required in constructor" };
+has model => sub { die "model required in constructor" };
 
 has _collection => sub {
   my $self = shift;
-  $self->model->mango->db->collection($self->document_class->description->collection);
+  $self->connection->_collection($self->model->collection);
 };
 
 has _cursor => sub {
@@ -243,9 +243,11 @@ sub single {
 
 sub _new_document {
   my($self, $doc, $updated) = @_;
+  my $model = $self->model;
 
-  $self->document_class->new(
-    model => $self->model,
+  $model->document_class->new(
+    connection => $self->connection,
+    model => $model,
     updated => $updated,
     $doc ? (_raw => $doc) : (),
   );

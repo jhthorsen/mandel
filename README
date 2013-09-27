@@ -45,9 +45,9 @@ DESCRIPTION
 
     This class binds it all together:
 
-    *   Mandel::Description
+    *   Mandel::Model
 
-        An object describing a document.
+        An object modelling a document.
 
     *   Mandel::Collection
 
@@ -103,6 +103,15 @@ METHODS
       $collection_obj = $self->collection($name);
 
     Returns a Mango::Collection object.
+
+  model
+      $model = $self->model($name);
+      $self = $self->model($name => \%model_args);
+      $self = $self->model($name => $model_obj);
+
+    Define or returns a Mandel::Model object. Will die unless a model is
+    registered by that name or "class_for" returns a class which has the
+    "model()" method defined.
 
   import
     See "SYNOPSIS".

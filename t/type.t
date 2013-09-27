@@ -16,7 +16,7 @@ is $obj->soup('noodle'), $obj, 'setter returns instance';
 is $obj->soup, 'noodle', 'getter returns value';
 ok $obj->updated, 'object reports that it has been updated';
 
-is( MyModel::Menu->description->collection, 'menu', 'import arg is collection name' );
+is( MyModel::Menu->model->collection, 'menu', 'import arg is collection name' );
 
 done_testing;
 

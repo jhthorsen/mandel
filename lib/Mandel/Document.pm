@@ -21,7 +21,7 @@ from L<Mandel::Document>.
 use Mojo::Base 'Mojo::Base';
 use Mojo::Util;
 use Mango::BSON::ObjectID;
-use Mandel::Description;
+use Mandel::Model;
 use Carp;
 
 =head1 ATTRIBUTES
@@ -52,9 +52,14 @@ sub id {
   return $self;
 }
 
-=head2 model
+=head2 connection
 
 An instance of L<Mandel>. This is required.
+
+=head2 model
+
+Returns a L<Mandel::Model> object. This object is a class variable and
+therefor shared between all instances.
 
 =head2 updated
 
@@ -63,12 +68,13 @@ otherwise not stored in database.
 
 =cut
 
-has model => sub { croak 'Must have a model object reference' };
+has connection => sub { die "connection required in constructor" };
+has model => sub { die "model required in constructor" };
 has updated => 0;
 
 has _collection => sub {
   my $self = shift;
-  $self->model->mango->db->collection($self->description->collection);
+  $self->connection->_mango_collection($self->model->collection);
 };
 
 has _raw => sub { +{} }; # raw mongodb document data
@@ -77,11 +83,6 @@ has _raw => sub { +{} }; # raw mongodb document data
 
 L<Mandel::Document> inherits all of the methods from L<Mojo::Base> and
 implements the following new ones.
-
-=head2 description
-
-Returns a L<Mandel::Description> object. This object is a class variable and
-therefor shared between all instances.
 
 =head2 new
 
@@ -163,19 +164,19 @@ See L</SYNOPSIS>.
 sub import {
   my($class, $collection) = @_;
   my $caller = caller;
-  my $description = Mandel::Description->new(document_class => $caller);
+  my $model = Mandel::Model->new(document_class => $caller);
 
   unless($collection) {
     $collection = Mojo::Util::decamelize(($caller =~ /(\w+)$/)[0]);
     $collection .= 's' unless $collection =~ /s$/;
   }
 
-  $description->collection($collection);
+  $model->collection($collection);
 
-  Mojo::Util::monkey_patch($caller, description => sub { $description });
-  Mojo::Util::monkey_patch($caller, field => sub { $description->add_field(@_) });
-  Mojo::Util::monkey_patch($caller, has_many => sub { $description->add_relationship(has_many => @_) });
-  Mojo::Util::monkey_patch($caller, has_one => sub { $description->add_relationship(has_one => @_) });
+  Mojo::Util::monkey_patch($caller, field => sub { $model->add_field(@_) });
+  Mojo::Util::monkey_patch($caller, has_many => sub { $model->add_relationship(has_many => @_) });
+  Mojo::Util::monkey_patch($caller, has_one => sub { $model->add_relationship(has_one => @_) });
+  Mojo::Util::monkey_patch($caller, model => sub { $model });
 
   @_ = ($class, __PACKAGE__);
   goto &Mojo::Base::import;

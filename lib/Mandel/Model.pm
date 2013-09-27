@@ -23,6 +23,10 @@ my $LOADER = Mojo::Loader->new;
 
 The name of the collection in the database.
 
+=head2 collection_class
+
+The class name of the collection class. This default to L<Mandel::Collection>.
+
 =head2 document_class
 
 The class name of the document this description is attached to. Default to
@@ -31,6 +35,7 @@ L<Mandel::Document>.
 =cut
 
 has collection => sub { die "unknown collection" };
+has collection_class => 'Mandel::Collection';
 has document_class => 'Mandel::Document';
 
 =head1 METHODS

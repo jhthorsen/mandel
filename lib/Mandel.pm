@@ -52,9 +52,9 @@ This class binds it all together:
 
 =over 4
 
-=item * L<Mandel::Description>
+=item * L<Mandel::Model>
 
-An object describing a document.
+An object modelling a document.
 
 =item * L<Mandel::Collection>
 
@@ -72,6 +72,7 @@ use Mojo::Base 'Mojo::Base';
 use Mojo::Loader;
 use Mojo::Util;
 use Mandel::Collection;
+use Mandel::Model;
 use Mango;
 use Carp;
 
@@ -195,12 +196,37 @@ Returns a L<Mango::Collection> object.
 
 sub collection {
   my($self, $name) = @_;
-  my $document_class = $self->class_for($name);
+  my $model = $self->model($name);
 
-  Mango::Collection->new(
-    document_class => $document_class,
-    model => $self,
-  );
+  $model->collection_class->new(model => $model, connection => $self);
+}
+
+=head2 model
+
+  $model = $self->model($name);
+  $self = $self->model($name => \%model_args);
+  $self = $self->model($name => $model_obj);
+
+Define or returns a L<Mandel::Model> object. Will die unless a model is
+registered by that name or L</class_for> returns a class which has the
+C<model()> method defined.
+
+=cut
+
+sub model {
+  my($self, $name, $model) = @_;
+
+  if($model) {
+    $model = Mandel::Model->new($model) if ref $model eq 'HASH';
+    $self->{model}{$name} = $model;
+    return $self;
+  }
+  elsif($model = $self->{model}{$name}) {
+    return $model;
+  }
+  else {
+    return $self->class_for($name)->model;
+  }
 }
 
 =head2 import
@@ -215,6 +241,10 @@ sub import {
 
   @_ = ($class, __PACKAGE__);
   goto &Mojo::Base::import;
+}
+
+sub _mango_collection {
+  $_[0]->mango->db->collection($_[1]);
 }
 
 =head1 SEE ALSO
