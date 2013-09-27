@@ -54,7 +54,7 @@ sub _other_object {
 
     if($obj) { # set ===========================================================
       if(ref $obj eq 'HASH') {
-        $obj = $self->_load_class($other)->new(%$obj, model => $self->model);
+        $obj = $class->_load_class($other)->new(%$obj, model => $self->model, connection => $self->connection);
       }
 
       $obj->save(sub {
@@ -70,7 +70,7 @@ sub _other_object {
       $collection->find_one({ _id => $self->{_raw}{$field} }, sub {
         my($collection, $err, $doc);
         $self->$cb($err, $obj) if $err;
-        $obj = $self->_load_class($other)->new(%$doc, model => $self->model);
+        $obj = $class->_load_class($other)->new(%$doc, model => $self->model, connection => $self->connection);
         $self->{$field} = $obj;
         $self->$cb($err, $obj);
       });

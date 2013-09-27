@@ -15,14 +15,14 @@ Mandel - Async model layer for MongoDB objects using Mango
   has_many cats => 'MyModel::Cat';
   has_one favorite_cat => 'MyModel::Cat';
 
-  package MyApp;
-  my $mandel = MyModel->new(uri => 'mongodb://localhost/mandeltest');
-  my $persons = $mandel->collection('person');
+  package main;
+  my $connection = MyModel->new(uri => "mongodb://localhost/my_db");
+  my $persons = $connection->collection('person');
 
-  {
-    my $p1 = $persons->create({ name => 'Bruce', age => 30 });
-    $p1->save(sub {});
-  }
+  my $p1 = $persons->create({ name => 'Bruce', age => 30 });
+  $p1->save(sub {
+    my($p1, $err) = @_;
+  });
 
   $persons->count(sub {
     my($persons, $n_persons) = @_;
@@ -36,10 +36,15 @@ Mandel - Async model layer for MongoDB objects using Mango
   });
 
   $persons->search({ name => 'Bruce' })->single(sub {
-    my($persons, $obj) = @_;
-    $obj->cats(sub {
-      my($obj, $err, $cats) = @_;
+    my($persons, $err, $person) = @_;
+
+    $person->cats(sub {
+      my($person, $err, $cats) = @_;
       $_->remove(sub {}) for @$cats;
+    });
+
+    $person->remove(sub {
+      my($person, $err) = @_;
     });
   });
 
@@ -217,6 +222,7 @@ sub model {
 
   if($model) {
     $model = Mandel::Model->new($model) if ref $model eq 'HASH';
+    $self->{loaded}{$name} = $model->document_class;
     $self->{model}{$name} = $model;
     return $self;
   }

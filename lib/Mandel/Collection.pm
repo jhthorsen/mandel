@@ -23,6 +23,7 @@ This class is used to describe a group of mongodb documents.
 
 use Mojo::Base -base;
 use Scalar::Util 'blessed';
+use Carp 'confess';
 
 =head1 ATTRIBUTES
 
@@ -36,12 +37,12 @@ An object that inherit from L<Mandel::Model>.
 
 =cut
 
-has connection => sub { die "connection required in constructor" };
-has model => sub { die "model required in constructor" };
+has connection => sub { confess "connection required in constructor" };
+has model => sub { confess "model required in constructor" };
 
 has _collection => sub {
   my $self = shift;
-  $self->connection->_collection($self->model->collection);
+  $self->connection->_mango_collection($self->model->collection);
 };
 
 has _cursor => sub {
@@ -79,16 +80,14 @@ sub all {
 
 =head2 create
 
- $self = $self->create(\%data, sub { my($self, $err, $obj) = @_; });
- $self = $self->create($obj, sub { my($self, $err, $obj) = @_; });
+  $document = $self->create;
+  $document = $self->create(\%args);
 
-Create an unpopulated instance of a given document. The primary reason to use
-this over the normal constructor is for class name resolution and proper
-handling of certain document attributes.
+Returns a new object of a given type. This object is NOT inserted into the
+mongodb collection. You need to call L<Mandel::Document/save> for that to
+happen.
 
-This new L<Mandel::Document> object will automatically get saved to mongodb
-when it goes out of scope, because L<Mandel::Document/updated> will be set to
-true.
+C<%args> is used to set the fields in the new document, NOT the attributes.
 
 =cut
 
@@ -96,7 +95,7 @@ sub create {
   my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
   my $self = shift;
 
-  $self->_new_document(shift || {}, 0);
+  $self->_new_document(shift || undef, 0);
 }
 
 =head2 count
@@ -110,11 +109,7 @@ Used to count how many documents the current L</search> query match.
 sub count {
   my($self, $cb) = @_;
 
-  $self->_cursor->count(sub {
-    my($cursor, $err, $int) = @_;
-    $self->$cb($err, $int);
-  });
-
+  $self->_cursor->count(sub { $self->$cb($_[2]) });
   $self;
 }
 
@@ -244,13 +239,20 @@ sub single {
 sub _new_document {
   my($self, $doc, $from_storage) = @_;
   my $model = $self->model;
+  my @extra;
+
+  if($doc) {
+    push @extra, _raw => $doc;
+    push @extra, dirty => { map { $_, 1 } keys %$doc };
+  }
+  if(my $connection = $self->{connection}) {
+    push @extra, connection => $connection,
+  }
 
   $model->document_class->new(
-    connection => $self->connection,
     model => $model,
-    updated => !$from_storage,
     in_storage => $from_storage,
-    $doc ? (_raw => $doc) : (),
+    @extra,
   );
 }
 

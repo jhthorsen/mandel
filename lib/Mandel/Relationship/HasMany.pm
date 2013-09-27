@@ -46,7 +46,7 @@ sub create {
   my $target = shift;
 
   Mojo::Util::monkey_patch($target => $class->_other_objects(@_));
-  Mojo::Util::monkey_patch($target => $class->_push_other_object(@_));
+  Mojo::Util::monkey_patch($target => $class->_add_other_object(@_));
   Mojo::Util::monkey_patch($target => $class->_search_other_objects(@_));
 }
 
@@ -67,18 +67,18 @@ sub _other_objects {
   };
 }
 
-sub _push_other_object {
+sub _add_other_object {
   my($class, $field, $other) = @_;
   my $singular = $field;
 
   # Ex: persons => person
   $singular =~ s/s$//;
 
-  return "push_$singular" => sub {
+  return "add_$singular" => sub {
     my($self, $obj, $cb) = @_;
 
     if(ref $obj eq 'HASH') {
-      $obj = $self->_load_class($other)->new(%$obj, model => $self->model);
+      $obj = $class->_load_class($other)->new(%$obj, model => $self->model);
     }
 
     $obj->_collection->save($obj->_raw, sub {
@@ -99,8 +99,8 @@ sub _search_other_objects {
     my($self) = @_;
     my $ids = $self->{_raw}{$field} || [];
 
-    return Mango::Collection->new(
-      document_class => $self->_load_class($other),
+    return Mandel::Collection->new(
+      connection => $self->connection,
       model => $self->model,
       query => {
         _id => { '$all' => [ @$ids ] },
