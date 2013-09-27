@@ -3,7 +3,7 @@ NAME
 
 SYNOPSIS
       package MyModel;
-      use Mojo::Base 'Mandel';
+      use Mandel;
 
       package MyModel::Person;
       use Mandel::Document;
@@ -81,19 +81,31 @@ METHODS
     new ones.
 
   initialize
-    Takes a list of document names. Calls the "initialize" method of any
-    document names passed in or if no names are passed then for all found
-    document classes.
+      $self->initialize(@names);
+      $self->initialize;
+
+    Takes a list of document names. Calls the "initialize" in
+    Mango::Document method on any document given as input. @names default to
+    "all_document_names" unless specified.
 
   all_document_names
+      @names = $self->all_document_names;
+
     Returns a list of all the documents in the "namespaces".
 
   class_for
+      $document_class = $self->class_for($name);
+
     Given a document name, find the related class name, ensure that it is
     loaded (or else die) and return it.
 
   collection
       $collection_obj = $self->collection($name);
+
+    Returns a Mango::Collection object.
+
+  import
+    See "SYNOPSIS".
 
 SEE ALSO
     Mojolicious, Mango

@@ -7,7 +7,7 @@ Mandel - Async model layer for MongoDB objects using Mango
 =head1 SYNOPSIS
 
   package MyModel;
-  use Mojo::Base 'Mandel';
+  use Mandel;
 
   package MyModel::Person;
   use Mandel::Document;
@@ -116,8 +116,12 @@ new ones.
 
 =head2 initialize
 
-Takes a list of document names. Calls the C<initialize> method of any document
-names passed in or if no names are passed then for all found document classes.
+  $self->initialize(@names);
+  $self->initialize;
+
+Takes a list of document names. Calls the L<Mango::Document/initialize> method
+on any document given as input. C<@names> default to L</all_document_names>
+unless specified.
 
 =cut
 
@@ -133,6 +137,8 @@ sub initialize {
 }
 
 =head2 all_document_names
+
+  @names = $self->all_document_names;
 
 Returns a list of all the documents in the L</namespaces>.
 
@@ -153,6 +159,8 @@ sub all_document_names {
 }
 
 =head2 class_for
+
+  $document_class = $self->class_for($name);
 
 Given a document name, find the related class name, ensure that it is loaded
 (or else die) and return it.
@@ -181,6 +189,8 @@ sub class_for {
 
   $collection_obj = $self->collection($name);
 
+Returns a L<Mango::Collection> object.
+
 =cut
 
 sub collection {
@@ -191,6 +201,20 @@ sub collection {
     document_class => $document_class,
     model => $self,
   );
+}
+
+=head2 import
+
+See L</SYNOPSIS>.
+
+=cut
+
+sub import {
+  my($class) = @_;
+  my $caller = caller;
+
+  @_ = ($class, __PACKAGE__);
+  goto &Mojo::Base::import;
 }
 
 =head1 SEE ALSO
