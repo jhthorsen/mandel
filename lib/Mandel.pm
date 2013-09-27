@@ -82,7 +82,7 @@ use Mojo::Util;
 use Mandel::Collection;
 use Mandel::Model;
 use Mango;
-use Carp;
+use Carp 'croak';
 
 our $VERSION = '0.01';
 
@@ -187,10 +187,10 @@ sub class_for {
     my $e = $LOADER->load($class);
     die $e if ref $e;
     next if $e;
-    return $self->{loaded}{$name} = $class
+    return $self->{loaded}{$name} = $class;
   }
 
-  Carp::carp "Could not find class for $name";
+  croak "Could not find class for $name";
 }
 
 =head2 collection
