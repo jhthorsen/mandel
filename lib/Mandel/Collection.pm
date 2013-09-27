@@ -71,7 +71,7 @@ sub all {
   $self->_cursor->all(sub {
     my($cursor, $err, $docs) = @_;
     return $self->$cb($err, []) if $err;
-    return $self->$cb($err, [ map { $self->_new_document($_, 0) } @$docs ]);
+    return $self->$cb($err, [ map { $self->_new_document($_, 1) } @$docs ]);
   });
 
   $self;
@@ -96,7 +96,7 @@ sub create {
   my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
   my $self = shift;
 
-  $self->_new_document(shift || {}, 1);
+  $self->_new_document(shift || {}, 0);
 }
 
 =head2 count
@@ -150,7 +150,7 @@ sub next {
 
   $self->_cursor->next(sub {
     my($cursor, $err, $doc) = @_;
-    $self->$cb($err, $doc ? $self->_new_document($doc, 0) : undef);
+    $self->$cb($err, $doc ? $self->_new_document($doc, 1) : undef);
   });
 
   $self;
@@ -235,20 +235,21 @@ sub single {
 
   $cursor->next(sub {
     my($cursor, $err, $doc) = @_;
-    $self->$cb($err, $doc ? $self->_new_document($doc, 0) : undef);
+    $self->$cb($err, $doc ? $self->_new_document($doc, 1) : undef);
   });
 
   $self;
 }
 
 sub _new_document {
-  my($self, $doc, $updated) = @_;
+  my($self, $doc, $from_storage) = @_;
   my $model = $self->model;
 
   $model->document_class->new(
     connection => $self->connection,
     model => $model,
-    updated => $updated,
+    updated => !$from_storage,
+    in_storage => $from_storage,
     $doc ? (_raw => $doc) : (),
   );
 }

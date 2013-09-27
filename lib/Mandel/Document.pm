@@ -52,6 +52,11 @@ sub id {
   return $self;
 }
 
+=head2 in_storage
+
+Boolean true if this document has been fetched from storage or L<saved|/save>
+to storage.
+
 =head2 connection
 
 An instance of L<Mandel>. This is required.
@@ -71,6 +76,7 @@ otherwise not stored in database.
 has connection => sub { die "connection required in constructor" };
 has model => sub { die "model required in constructor" };
 has updated => 0;
+has in_storage => 0;
 
 has _collection => sub {
   my $self = shift;
@@ -117,7 +123,10 @@ sub remove {
 
   $self->_collection->remove({ _id => $self->id }, sub {
     my($collection, $err, $doc);
-    $self->updated(1) if $doc->{n};
+    unless($err) {
+      $self->updated(1);
+      $self->in_storage(0);
+    }
     $self->$cb($err);
   });
 
@@ -148,7 +157,10 @@ sub save {
 
   $self->_collection->save($self->_raw, sub {
     my($collection, $err, $doc);
-    $self->updated(0) unless $err;
+    unless($err) {
+      $self->updated(0);
+      $self->in_storage(1);
+    }
     $self->$cb($err);
   });
 
