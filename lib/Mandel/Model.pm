@@ -1,8 +1,8 @@
-package Mandel::Description;
+package Mandel::Model;
 
 =head1 NAME
 
-Mandel::Description - An object describing a document
+Mandel::Model - An object modelling a document
 
 =head1 DESCRIPTION
 
@@ -25,12 +25,13 @@ The name of the collection in the database.
 
 =head2 document_class
 
-The class name of the document this description is attached to.
+The class name of the document this description is attached to. Default to
+L<Mandel::Document>.
 
 =cut
 
-has collection => '';
-has document_class => '';
+has collection => sub { die "unknown collection" };
+has document_class => 'Mandel::Document';
 
 =head1 METHODS
 
