@@ -46,10 +46,18 @@ sub id {
   my $self = shift;
   my $raw = $self->_raw;
 
-  return $raw->{_id} ||= Mango::BSON::ObjectID->new unless @_;
-  $self->updated(1);
-  $raw->{_id} = ref $_[0] ? $_[0] : Mango::BSON::ObjectID->new($_[0]);
-  return $self;
+  if(@_) {
+    $self->dirty->{_id} = 1;
+    $raw->{_id} = ref $_[0] ? $_[0] : Mango::BSON::ObjectID->new($_[0]);
+    return $self;
+  }
+  elsif($raw->{_id}) {
+    return $raw->{_id};
+  }
+  else {
+    $self->dirty->{_id} = 1;
+    return $raw->{_id} = Mango::BSON::ObjectID->new;
+  }
 }
 
 =head2 in_storage
@@ -66,16 +74,19 @@ An instance of L<Mandel>. This is required.
 Returns a L<Mandel::Model> object. This object is a class variable and
 therefor shared between all instances.
 
-=head2 updated
+=head2 dirty
 
-This attribute is true if any of the mongodb fields has been updated or
-otherwise not stored in database.
+This attribute holds a hash-ref where the keys are name of fields that has
+been updated or otherwise not stored in database.
+
+TODO: Define what the values should hold. Timestamp? A counter for how
+many times the field has been updated before saved..?
 
 =cut
 
 has connection => sub { die "connection required in constructor" };
 has model => sub { die "model required in constructor" };
-has updated => 0;
+has dirty => sub { +{} };
 has in_storage => 0;
 
 has _collection => sub {
@@ -110,11 +121,24 @@ A no-op placeholder useful for initialization (see L<Mandel/initialize>)
 
 sub initialize {}
 
+=head2 is_changed
+
+Returns true if L</dirty> contains any field names.
+
+=cut
+
+sub is_changed {
+  return 0 unless $_[0]->{dirty};
+  return 0 unless keys %{ $_[0]->{dirty} };
+  return 1;
+}
+
 =head2 remove
 
   $self = $self->remove(sub { my($self, $err) = @_; });
 
-Will remove this object from the L</collection> and L</updated> to 1.
+Will remove this object from the L</collection> and set mark
+all fields as L</dirty>.
 
 =cut
 
@@ -124,7 +148,7 @@ sub remove {
   $self->_collection->remove({ _id => $self->id }, sub {
     my($collection, $err, $doc);
     unless($err) {
-      $self->updated(1);
+      $self->dirty->{$_} = 1 for keys %{ $self->_raw };
       $self->in_storage(0);
     }
     $self->$cb($err);
@@ -137,18 +161,18 @@ sub remove {
 
   $self = $self->save(sub { my($self, $err) = @_; });
 
-This method stores the raw data in the database and collection. It also sets
-L</updated> to false.
+This method stores the raw data in the database and collection. It clear
+the L</dirty> attribute.
 
 NOTE: This method will call the callback (with $err set to empty string)
-immediately unless L</updated> is set to true.
+immediately unless L</is_changed> returns true.
 
 =cut
 
 sub save {
   my($self, $cb) = @_;
 
-  unless($self->updated) {
+  unless($self->is_changed) {
     $self->$cb('');
     return $self;
   }
@@ -158,7 +182,7 @@ sub save {
   $self->_collection->save($self->_raw, sub {
     my($collection, $err, $doc);
     unless($err) {
-      $self->updated(0);
+      delete $self->{dirty};
       $self->in_storage(1);
     }
     $self->$cb($err);

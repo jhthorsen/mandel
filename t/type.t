@@ -11,10 +11,10 @@ can_ok 'MyModel::Menu', 'soup';
 
 my $obj = MyModel::Menu->new;
 
-ok ! $obj->updated, 'object has not been updated';
+ok ! $obj->is_changed, 'object has not been changed';
 is $obj->soup('noodle'), $obj, 'setter returns instance';
 is $obj->soup, 'noodle', 'getter returns value';
-ok $obj->updated, 'object reports that it has been updated';
+ok $obj->is_changed, 'object reports that it has been changed';
 
 is( MyModel::Menu->model->collection, 'menu', 'import arg is collection name' );
 

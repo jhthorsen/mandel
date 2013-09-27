@@ -57,7 +57,7 @@ sub add_field {
   for my $field (@{ref $fields eq 'ARRAY' ? $fields : [$fields]}) {
     my $code = "package $class;\nsub $field {\n my \$r = \$_[0]->_raw;";
     $code .= "if (\@_ == 1) {\n";
-    $code .= "    \$_[0]->{updated}=1;";
+    $code .= "    \$_[0]->{dirty}{$field} = 1;";
     $code .= "    return \$r->{'$field'};";
     $code .= "\n  }\n  \$r->{'$field'} = \$_[1];\n";
     $code .= "  \$_[0];\n}";
