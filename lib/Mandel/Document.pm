@@ -52,23 +52,17 @@ sub id {
   return $self;
 }
 
-=head2 autosave
-
-When true, if the object goes out of scope, and L</updated> is true, the data
-will be saved.
-
 =head2 model
 
 An instance of L<Mandel>. This is required.
 
 =head2 updated
 
-When true, if the object goes out of scope, and L</autosave> is true, the data
-will be saved.
+This attribute is true if any of the mongodb fields has been updated or
+otherwise not stored in database.
 
 =cut
 
-has autosave => 1;
 has model => sub { croak 'Must have a model object reference' };
 has updated => 0;
 
@@ -111,10 +105,9 @@ sub initialize {}
 
 =head2 remove
 
-  $self = $self->remove(sub { my($self, $err) = @_; })
+  $self = $self->remove(sub { my($self, $err) = @_; });
 
-Will remove this object from the L</collection>, set L</autosave> to 0 and
-L</updated> to 1.
+Will remove this object from the L</collection> and L</updated> to 1.
 
 =cut
 
@@ -123,7 +116,7 @@ sub remove {
 
   $self->_collection->remove({ _id => $self->id }, sub {
     my($collection, $err, $doc);
-    $self->updated(1)->autosave(0) if $doc->{n};
+    $self->updated(1) if $doc->{n};
     $self->$cb($err);
   });
 
@@ -132,14 +125,23 @@ sub remove {
 
 =head2 save
 
+  $self = $self->save(sub { my($self, $err) = @_; });
+
 This method stores the raw data in the database and collection. It also sets
-L</updated> to false. L</save> is automatically called when the object goes out
-of scope if and only if L</autosave> and L</updated> are both true.
+L</updated> to false.
+
+NOTE: This method will call the callback (with $err set to empty string)
+immediately unless L</updated> is set to true.
 
 =cut
 
 sub save {
   my($self, $cb) = @_;
+
+  unless($self->updated) {
+    $self->$cb('');
+    return $self;
+  }
 
   $self->id; # make sure we have an ObjectID
 
@@ -177,11 +179,6 @@ sub import {
 
   @_ = ($class, __PACKAGE__);
   goto &Mojo::Base::import;
-}
-
-sub DESTROY {
-  my $self = shift;
-  $self->save if $self->autosave and $self->updated;
 }
 
 =head1 SEE ALSO

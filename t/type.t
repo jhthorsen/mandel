@@ -9,7 +9,7 @@ isa_ok 'MyModel::Menu', 'Mojo::Base';
 can_ok 'MyModel::Menu', 'field';
 can_ok 'MyModel::Menu', 'soup';
 
-my $obj = MyModel::Menu->new(autosave => 0); # TODO: unset autosave when possible
+my $obj = MyModel::Menu->new;
 
 ok ! $obj->updated, 'object has not been updated';
 is $obj->soup('noodle'), $obj, 'setter returns instance';

@@ -13,10 +13,8 @@ is $doc->id->to_string, '507f1f77bcf86cd799439011', 'set from string';
 $doc->id(Mango::BSON::ObjectID->new);
 ok $doc->id->to_string, 'set from object';
 isnt $doc->id->to_string, '507f1f77bcf86cd799439011', 'changed string';
-$doc->autosave(0);
 
 $doc = Mandel::Document->new(id => '507f1f77bcf86cd799439011');
 is $doc->id->to_string, '507f1f77bcf86cd799439011', 'set in constructor';
-$doc->autosave(0);
 
 done_testing;
