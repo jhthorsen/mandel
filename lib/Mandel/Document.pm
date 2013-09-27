@@ -19,10 +19,14 @@ from L<Mandel::Document>.
 =cut
 
 use Mojo::Base 'Mojo::Base';
-use Mojo::Util;
-use Mango::BSON::ObjectID;
+use Mojo::JSON::Pointer;
+use Mojo::Util qw( monkey_patch );
 use Mandel::Model;
-use Carp;
+use Mango::BSON::ObjectID;
+use Scalar::Util 'looks_like_number';
+use Carp 'croak';
+
+my $POINTER = Mojo::JSON::Pointer->new;
 
 =head1 ATTRIBUTES
 
@@ -121,6 +125,19 @@ A no-op placeholder useful for initialization (see L<Mandel/initialize>)
 
 sub initialize {}
 
+=head2 get
+
+  $any = $self->get('/json/2/pointer');
+
+Use L<Mojo::JSON::Pointer> to retrieve a value inside the raw mongodb document.
+
+=cut
+
+sub get {
+  my $self = shift;
+  $POINTER->get($self->_raw, @_);
+}
+
 =head2 is_changed
 
 Returns true if L</dirty> contains any field names.
@@ -191,6 +208,57 @@ sub save {
   $self;
 }
 
+=head2 set
+
+  $self = $self->set('/json/2/pointer', $val);
+
+Use a JSON pointer to set data in the raw mongodb document. This method will
+die if the pointer points to non-compatible data.
+
+=cut
+
+sub set {
+  my($self, $pointer, $val) = @_;
+  my $raw = $self->_raw;
+  my(@path, $field);
+
+  return $self unless $pointer =~ s!^/!!;
+  @path = split '/', $pointer;
+  $field = $path[0];
+
+  while(@path) {
+    my $p = shift @path;
+    my $type = ref $raw;
+    my $want = looks_like_number $p ? 'INDEX' : 'KEY';
+
+    if($type eq 'HASH') {
+      if(@path) {
+        $raw = $raw->{$p} ||= looks_like_number $path[0] ? [] : {};
+      }
+      else {
+        $raw->{$p} = $val;
+      }
+    }
+    elsif($type eq 'ARRAY') {
+      if($want ne 'INDEX') {
+        croak "Cannot set $want in $type for /$pointer ($p)";
+      }
+      elsif(@path) {
+        $raw = $raw->[$p] ||= looks_like_number $path[0] ? [] : {};
+      }
+      else {
+        $raw->[$p] = $val;
+      }
+    }
+    else {
+      croak "Cannot set $want in SCALAR for /$pointer ($p)";
+    }
+  }
+
+  $self->dirty->{$field} = 1 if defined $field;
+  $self;
+}
+
 =head2 import
 
 See L</SYNOPSIS>.
@@ -209,10 +277,10 @@ sub import {
 
   $model->collection($collection);
 
-  Mojo::Util::monkey_patch($caller, field => sub { $model->add_field(@_) });
-  Mojo::Util::monkey_patch($caller, has_many => sub { $model->add_relationship(has_many => @_) });
-  Mojo::Util::monkey_patch($caller, has_one => sub { $model->add_relationship(has_one => @_) });
-  Mojo::Util::monkey_patch($caller, model => sub { $model });
+  monkey_patch $caller, field => sub { $model->add_field(@_) };
+  monkey_patch $caller, has_many => sub { $model->add_relationship(has_many => @_) };
+  monkey_patch $caller, has_one => sub { $model->add_relationship(has_one => @_) };
+  monkey_patch $caller, model => sub { $model };
 
   @_ = ($class, __PACKAGE__);
   goto &Mojo::Base::import;
