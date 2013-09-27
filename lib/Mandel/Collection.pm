@@ -23,6 +23,7 @@ This class is used to describe a group of mongodb documents.
 
 use Mojo::Base -base;
 use Mandel::Iterator;
+use Mango::BSON ':bson';
 use Scalar::Util 'blessed';
 use Carp 'confess';
 
@@ -153,6 +154,27 @@ sub remove {
   my $self = shift;
 
   $self->_collection->remove(@_, $cb);
+  $self;
+}
+
+=head2 save
+
+  $self = $self->save(\%document, sub { my($self, $err, $obj) = @_; );
+
+Used to save a document. The callback receives a L<Mandel::Document>.
+
+=cut
+
+sub save {
+  my($self, $raw, $cb) = @_;
+
+  $raw->{_id} ||= bson_oid;
+
+  $self->_collection->save($raw, sub {
+    my($collection, $err, $doc) = @_;
+    $self->$cb($err, $self->_new_document($raw, 1));
+  });
+
   $self;
 }
 
