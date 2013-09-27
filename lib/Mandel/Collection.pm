@@ -60,7 +60,7 @@ query.
 sub all {
   my($self, $cb) = @_;
 
-  $self->_cursor->all(sub {
+  $self->_new_cursor->all(sub {
     my($cursor, $err, $docs) = @_;
     return $self->$cb($err, []) if $err;
     return $self->$cb($err, [ map { $self->_new_document($_, 1) } @$docs ]);
@@ -100,7 +100,7 @@ Used to count how many documents the current L</search> query match.
 sub count {
   my($self, $cb) = @_;
 
-  $self->_cursor->count(sub { $self->$cb($_[2]) });
+  $self->_new_cursor->count(sub { $self->$cb($_[2]) });
   $self;
 }
 
@@ -115,7 +115,7 @@ Get all distinct values for key in this collection.
 sub distinct {
   my($self, $field, $cb) = @_;
 
-  $self->_cursor->distinct($field, sub {
+  $self->_new_cursor->distinct($field, sub {
     my($cursor, $err, $values) = @_;
     $self->$cb($err, $values);
   });
@@ -135,7 +135,7 @@ sub iterator {
   my $self = shift;
 
   Mandel::Iterator->new(
-    cursor => $self->_cursor,
+    cursor => $self->_new_cursor,
     model => $self->model,
   );
 }
@@ -191,7 +191,7 @@ C<%search> query.
 sub single {
   my($self, $cb) = @_;
   
-  $self->_cursor->limit(-1)->next(sub {
+  $self->_new_cursor->limit(-1)->next(sub {
     my($cursor, $err, $doc) = @_;
     $self->$cb($err, $doc ? $self->_new_document($doc, 1) : undef);
   });
@@ -199,7 +199,7 @@ sub single {
   $self;
 }
 
-sub _cursor {
+sub _new_cursor {
   my $self = shift;
   my $extra = $self->{extra} || {};
   my $cursor = $self->_collection->find;
