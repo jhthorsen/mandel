@@ -305,13 +305,13 @@ sub import {
   my $model = Mandel::Model->new(document_class => $caller, %args);
   my $base_class = 'Mandel::Document';
 
+  if($args{collection} and $args{collection} =~ /::/) {
+    $base_class = delete $args{collection};
+  }
   if(!$args{collection}) {
     $args{collection} = Mojo::Util::decamelize(($caller =~ /(\w+)$/)[0]);
     $args{collection} .= 's' unless $args{collection} =~ /s$/;
     $model->collection($args{collection});
-  }
-  elsif($args{collection} =~ /::/) {
-    $base_class = delete $args{collection};
   }
 
   monkey_patch $caller, field => sub { $model->add_field(@_) };

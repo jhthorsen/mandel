@@ -25,4 +25,9 @@ isa_ok 'Custom::Base::Class', 'Mandel::Document';
   isnt Custom::Base::Class->model, My::Document->model, 'not the same model';
 }
 
+{
+  is Custom::Base::Class->model->collection, 'class', 'class collection';
+  is My::Document->model->collection, 'documents', 'models collection';
+}
+
 done_testing;

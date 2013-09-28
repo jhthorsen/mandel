@@ -1,6 +1,7 @@
 Revision history for Mandel
 
 0.03
+       * Fix default collection name on custom document base class
        * Add Mandel::Collection::patch()
 
 0.02     Sat Sep 28 12:02:38 2013
