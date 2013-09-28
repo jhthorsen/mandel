@@ -141,6 +141,40 @@ sub iterator {
   );
 }
 
+=head2 patch
+
+  $self = $sef->patch(\%document, sub { my($self, $err) = @_ });
+  $self = $sef->patch($document, sub { my($self, $err) = @_ });
+
+Used to save of a partial document. This method require
+L<_id|Mandel::Document/id> to be set in the document to save.
+
+L</patch> use L<Mandel::Collection/update> with the mongodb C<$set>
+operator under the hood.
+
+=cut
+
+sub patch {
+  my($self, $patch, $cb) = @_;
+  my $id = ref $patch eq 'HASH' ?  delete $patch->{_id} : $patch->id;
+
+  unless($id) {
+    $self->$cb('_id is required in input $patch');
+    return $self;
+  }
+
+  $self->_collection->update(
+    { _id => ref $id ? $id : bson_oid $id },
+    { '$set' => $patch },
+    sub {
+      my($collection, $err, $doc) = @_;
+      $self->$cb($err);
+    },
+  );
+
+  $self;
+}
+
 =head2 remove
 
   $self = $self->remove(\%query, \%extra, sub { my($self, $err, $doc) = @_; });
