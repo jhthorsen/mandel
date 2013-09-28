@@ -8,6 +8,7 @@ Revision history for Mandel
        * Add Mandel::storage(), remove ::mango()
        * Add builders for attributes, which makes it easier to customize in
          subclass.
+       * Add support for custom base class for documents
 
 0.01     Fri Sep 27 18:55:40 2013
        * Released alpha software

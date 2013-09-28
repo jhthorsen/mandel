@@ -6,13 +6,25 @@ Mandel::Document - A single MongoDB document with logic
 
 =head1 SYNOPSIS
 
-  package MyModel::MyType;
-  use Mandel::Document 'some_collection_name';
+Extend a class with C<MyDocument::Class> instead of L<Mandel::Document>:
 
-  package MyModel::MyType;
+  package MyModel::Person;
+  use Mandel::Document "MyDocument::Class";
+
+Specify a default collection name, instead of the
+L<default|Mandel::Model/collection>. L</import> will think you meant a base
+class, if this argument contains "::".
+
+  package MyModel::Person;
+  use Mandel::Document "some_collection_name";
+
+Spell out the options with a list:
+
+  package MyModel::Person;
   use Mandel::Document (
-    collection => 'some_collection_name',
-    collection_class => 'My::Custom::Collection',
+    extends => "My::Document::Class",
+    collection => "some_collection_name",
+    collection_class => "My::Custom::Collection",
   );
 
 =head1 DESCRIPTION
@@ -288,14 +300,18 @@ See L</SYNOPSIS>.
 
 sub import {
   my $class = shift;
-  my %args = @_ == 1 ? (collection => shift) : @_;
+  my %args = @_ == 1 ? (collection => shift, @_) : @_;
   my $caller = caller;
   my $model = Mandel::Model->new(document_class => $caller, %args);
+  my $base_class = 'Mandel::Document';
 
-  unless($args{collection}) {
+  if(!$args{collection}) {
     $args{collection} = Mojo::Util::decamelize(($caller =~ /(\w+)$/)[0]);
     $args{collection} .= 's' unless $args{collection} =~ /s$/;
     $model->collection($args{collection});
+  }
+  elsif($args{collection} =~ /::/) {
+    $base_class = delete $args{collection};
   }
 
   monkey_patch $caller, field => sub { $model->add_field(@_) };
@@ -303,7 +319,7 @@ sub import {
   monkey_patch $caller, has_one => sub { $model->add_relationship(has_one => @_) };
   monkey_patch $caller, model => sub { $model };
 
-  @_ = ($class, __PACKAGE__);
+  @_ = ($class, $base_class);
   goto &Mojo::Base::import;
 }
 
