@@ -19,10 +19,10 @@ my $db = "mandel_test_$0"; $db =~ s/\W/_/g;
   package main;
 }
 
-my $connection = MyModel->new(uri => "mongodb://localhost/$db");
+my $connection = MyModel->connect("mongodb://localhost/$db");
 my $persons = $connection->collection('person');
 
-$connection->mango->db->command(dropDatabase => 1);
+$connection->storage->db->command(dropDatabase => 1);
 
 {
   my $p1 = $persons->create({ name => 'Bruce', age => 30 });

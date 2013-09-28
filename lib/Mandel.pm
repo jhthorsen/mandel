@@ -16,7 +16,7 @@ Mandel - Async model layer for MongoDB objects using Mango
   has_one favorite_cat => 'MyModel::Cat';
 
   package main;
-  my $connection = MyModel->new(uri => "mongodb://localhost/my_db");
+  my $connection = MyModel->connect("mongodb://localhost/my_db");
   my $persons = $connection->collection('person');
 
   my $p1 = $persons->create({ name => 'Bruce', age => 30 });
@@ -93,55 +93,60 @@ my $LOADER = Mojo::Loader->new;
 L<Mandel> inherits all attributes from L<Mojo::Base> and implements the
 following new ones.
 
-=head2 mango
-
-An instance of L<Mango> which acts as the database connection. If not
-provided, one will be lazily created using the L</uri> attribute.
-
 =head2 namespaces
 
 The namespaces which will be searched when looking for Types. By default, the
 (sub)class name of this module.
 
-=head2 uri
+=head2 model_class
 
-The uri used by L<Mango> to connect to the MongoDB server.
+Returns L<Mandel::Model>.
 
-IMPORTANT! It requires the database to be part of the URI. Example:
+=head2 storage
 
-  mongodb://localhost/my_database_name
+An instance of L<Mango> which acts as the database connection. If not
+provided.
 
 =cut
 
-has mango => sub { Mango->new( shift->uri or croak 'Please provide a uri' ) };
-has namespaces => sub { [ ref $_[0] ] };
-has uri => 'mongodb://localhost/mandeltest';
+has model_class => sub { shift->_build_model_class };
+has namespaces => sub { shift->_build_namespaces };
+has storage => sub { shift->_build_storage };
+
+sub _build_model_class { 'Mandel::Model' }
+sub _build_namespaces { [ ref $_[0] ] }
+sub _build_storage { Mango->new('mongodb://localhost/mandeltest') }
 
 =head1 METHODS
 
 L<Mandel> inherits all methods from L<Mojo::Base> and implements the following
 new ones.
 
-=head2 initialize
+=head2 connect
 
-  $self->initialize(@names);
-  $self->initialize;
+  $self = $class->connect(@connect_args);
+  $clone = $self->connect(@connect_args);
 
-Takes a list of document names. Calls the L<Mango::Document/initialize> method
-on any document given as input. C<@names> default to L</all_document_names>
-unless specified.
+C<@connect_args> will be passed on to L<Mango/new>, which again will be set
+as L</storage>.
+
+Calling this on an object will return a clone, but with a fresh L</storage>
+object.
 
 =cut
 
-sub initialize {
-  my $self = shift;
-  my @documents = @_ ? @_ : $self->all_document_names;
+sub connect {
+  my($self, @args) = @_;
+  my $storage = Mango->new(@args);
 
-  for my $document ( @documents ) {
-    my $class = $self->class_for($document);
-    my $collection = $self->mango->db->collection($class->collection);
-    $class->initialize($self, $collection);
+  if(my $class = ref $self) {
+    $self = $class->new(%$self, storage => $storage);
   }
+  else {
+    $self = $self->new(storage => $storage);
+  }
+
+  $self;
 }
 
 =head2 all_document_names
@@ -224,7 +229,7 @@ sub model {
   my($self, $name, $model) = @_;
 
   if($model) {
-    $model = Mandel::Model->new($model) if ref $model eq 'HASH';
+    $model = $self->model_class->new($model) if ref $model eq 'HASH';
     $model->name($name);
     $self->{loaded}{$name} = $model->document_class;
     $self->{model}{$name} = $model;
@@ -235,6 +240,28 @@ sub model {
   }
   else {
     return $self->class_for($name)->model;
+  }
+}
+
+=head2 initialize
+
+  $self->initialize(@names);
+  $self->initialize;
+
+Takes a list of document names. Calls the L<Mango::Document/initialize> method
+on any document given as input. C<@names> default to L</all_document_names>
+unless specified.
+
+=cut
+
+sub initialize {
+  my $self = shift;
+  my @documents = @_ ? @_ : $self->all_document_names;
+
+  for my $document ( @documents ) {
+    my $class = $self->class_for($document);
+    my $collection = $self->_collection($class->collection);
+    $class->initialize($self, $collection);
   }
 }
 
@@ -252,8 +279,8 @@ sub import {
   goto &Mojo::Base::import;
 }
 
-sub _mango_collection {
-  $_[0]->mango->db->collection($_[1]);
+sub _collection {
+  $_[0]->storage->db->collection($_[1]);
 }
 
 =head1 SEE ALSO

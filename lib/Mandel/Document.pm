@@ -101,7 +101,7 @@ has in_storage => 0;
 
 has _collection => sub {
   my $self = shift;
-  $self->connection->_mango_collection($self->model->collection);
+  $self->connection->_collection($self->model->collection);
 };
 
 has _raw => sub { +{} }; # raw mongodb document data

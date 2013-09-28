@@ -12,7 +12,7 @@ SYNOPSIS
       has_one favorite_cat => 'MyModel::Cat';
 
       package main;
-      my $connection = MyModel->new(uri => "mongodb://localhost/my_db");
+      my $connection = MyModel->connect("mongodb://localhost/my_db");
       my $persons = $connection->collection('person');
 
       my $p1 = $persons->create({ name => 'Bruce', age => 30 });
@@ -69,32 +69,30 @@ ATTRIBUTES
     Mandel inherits all attributes from Mojo::Base and implements the
     following new ones.
 
-  mango
-    An instance of Mango which acts as the database connection. If not
-    provided, one will be lazily created using the "uri" attribute.
-
   namespaces
     The namespaces which will be searched when looking for Types. By
     default, the (sub)class name of this module.
 
-  uri
-    The uri used by Mango to connect to the MongoDB server.
+  model_class
+    Returns Mandel::Model.
 
-    IMPORTANT! It requires the database to be part of the URI. Example:
-
-      mongodb://localhost/my_database_name
+  storage
+    An instance of Mango which acts as the database connection. If not
+    provided.
 
 METHODS
     Mandel inherits all methods from Mojo::Base and implements the following
     new ones.
 
-  initialize
-      $self->initialize(@names);
-      $self->initialize;
+  connect
+      $self = $class->connect(@connect_args);
+      $clone = $self->connect(@connect_args);
 
-    Takes a list of document names. Calls the "initialize" in
-    Mango::Document method on any document given as input. @names default to
-    "all_document_names" unless specified.
+    @connect_args will be passed on to "new" in Mango, which again will be
+    set as "storage".
+
+    Calling this on an object will return a clone, but with a fresh
+    "storage" object.
 
   all_document_names
       @names = $self->all_document_names;
@@ -120,6 +118,14 @@ METHODS
     Define or returns a Mandel::Model object. Will die unless a model is
     registered by that name or "class_for" returns a class which has the
     "model()" method defined.
+
+  initialize
+      $self->initialize(@names);
+      $self->initialize;
+
+    Takes a list of document names. Calls the "initialize" in
+    Mango::Document method on any document given as input. @names default to
+    "all_document_names" unless specified.
 
   import
     See "SYNOPSIS".

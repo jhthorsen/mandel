@@ -6,8 +6,8 @@ Mandel::Collection - A collection of Mandel documents
 
 =head1 SYNOPSIS
 
-  my $connection = MyModel->new(uri => ...);
-  my $persons = $connection->collection('person');
+  my $connection = MyModel->connect("mongodb://localhost/my_db");
+  my $persons = $connection->collection("person");
 
   $persons->count(sub {
     my($persons, $err, $int) = @_;
@@ -44,7 +44,7 @@ has model => sub { confess "model required in constructor" };
 
 has _collection => sub {
   my $self = shift;
-  $self->connection->_mango_collection($self->model->collection);
+  $self->connection->_collection($self->model->collection);
 };
 
 =head1 METHODS

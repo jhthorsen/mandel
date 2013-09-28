@@ -66,7 +66,7 @@ sub _other_object {
       });
     }
     else { # get =============================================================
-      my $collection = $self->model->mango->db->collection($other->description->collection);
+      my $collection = $self->connection->_collection($other->description->collection);
       $collection->find_one({ _id => $self->{_raw}{$field} }, sub {
         my($collection, $err, $doc);
         $self->$cb($err, $obj) if $err;

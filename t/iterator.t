@@ -7,7 +7,7 @@ plan skip_all => 'Set TEST_ONLINE to test' unless $ENV{TEST_ONLINE};
 plan tests => 4;
 
 my $db = "mandel_test_$0"; $db =~ s/\W/_/g;
-my $connection = Mandel->new(uri => "mongodb://localhost/$db");
+my $connection = Mandel->connect("mongodb://localhost/$db");
 my($model, $collection, $iterator);
 
 $model = $connection->model(person => {});

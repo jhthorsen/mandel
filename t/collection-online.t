@@ -7,11 +7,11 @@ plan skip_all => 'Set TEST_ONLINE to test' unless $ENV{TEST_ONLINE};
 plan tests => 4;
 
 my $db = "mandel_test_$0"; $db =~ s/\W/_/g;
-my $connection = Mandel->new(uri => "mongodb://localhost/$db");
+my $connection = Mandel->connect("mongodb://localhost/$db");
 my($collection, $iterator);
 
-diag $connection->model(person => {})->model('person')->add_field('name');
-diag $collection = $connection->collection('person');
+$connection->model(person => {})->model('person')->add_field('name');
+$collection = $connection->collection('person');
 
 $collection->save({ name => 'Bruce' }, sub {
   my($col, $err, $doc) = @_;
