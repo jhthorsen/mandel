@@ -3,6 +3,7 @@ Revision history for Mandel
 0.03
        * Fix default collection name on custom document base class
        * Add Mandel::Collection::patch()
+       * Add support for has_one() and has_many('/json/pointer')
 
 0.02     Sat Sep 28 12:02:38 2013
        * Add Mandel::Collection::save()
