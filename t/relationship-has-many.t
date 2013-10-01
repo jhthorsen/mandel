@@ -15,9 +15,4 @@ ok $person->document_class->can('cats'), 'person can cats()';
 ok $person->document_class->can('add_cat'), 'person can add_cat()';
 ok $person->document_class->can('search_cats'), 'person can search_cats()';
 
-$person->add_relationship(has_many => '/family/siblings' => $person->document_class);
-ok $person->document_class->can('family_siblings'), 'person can family_siblings()';
-ok $person->document_class->can('add_family_sibling'), 'person can add_family_sibling()';
-ok $person->document_class->can('search_family_siblings'), 'person can search_family_siblings()';
-
 done_testing;

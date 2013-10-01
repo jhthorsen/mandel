@@ -1,5 +1,8 @@
 Revision history for Mandel
 
+0.05
+       * Change has_one/has_many documents point back to the "owner".
+
 0.04     Tue Oct  1 17:08:53 2013
        * Add support for has_one() and has_many('/json/pointer')
        * Add support for MANDEL_CURSOR_DEBUG=1

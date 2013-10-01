@@ -32,7 +32,7 @@ use Mojo::Util;
 
 =head2 create
 
-  $clsas->create($target => $field_name => 'Other::Document::Class');
+  $clsas->create($target => $accessor => 'Other::Document::Class');
 
 =cut
 
@@ -44,14 +44,14 @@ sub create {
 }
 
 sub _other_object {
-  my($class, $field, $other) = @_;
-  my $sub_name = $class->_sub_name($field);
+  my($class, $accessor, $other) = @_;
 
-  return $sub_name => sub {
+  return $accessor => sub {
     my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
     my $self = shift;
     my $obj = shift;
     my $other_collection = $class->_load_class($other)->model->new_collection($self->connection);
+    my $foreign = $class->_foreign_key($self);
 
     if($obj) { # set ===========================================================
       if(ref $obj eq 'HASH') {
@@ -61,18 +61,16 @@ sub _other_object {
       Mojo::IOLoop->delay(
         sub {
           my($delay) = @_;
-          my $old = $self->get($field);
-          $obj->save($delay->begin);
-          $other_collection->search({ _id => $old })->remove($delay->begin) if $old;
+          $other_collection->search({ $foreign => $self->id })->remove($delay->begin);
         },
         sub {
-          my($delay, $err) = @_;
-          return $self->$cb($err, $obj) if $err;
-          $self->set($field => $obj->id)->save($delay->begin);
+          my($delay, @err) = @_;
+          $self->save($delay->begin) unless $self->in_storage;
+          $obj->set("/$foreign", $self->id)->save($delay->begin);
         },
         sub {
-          my($delay, $err) = @_;
-          $self->$cb($err, $obj);
+          my($delay, @err) = @_;
+          $self->$cb($err[-1], $obj);
         },
       );
     }
@@ -80,7 +78,7 @@ sub _other_object {
       my $model = $class->_load_class($other)->model;
       $model->collection_class
         ->new({ connection => $self->connection, model => $model })
-        ->search({ _id => $self->get($field) })
+        ->search({ $foreign => $self->id })
         ->single(sub {
           my($collection, $err, $obj) = @_;
           $self->$cb($err, $obj);

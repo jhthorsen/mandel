@@ -10,26 +10,26 @@ my $name = rand;
   my $id;
 
   ok !$person->in_storage, 'person not in_storage';
-  $person->favorite_cat({ name => $name }, sub {
-    my($person, $err, $cat) = @_;
+  $person->father({ name => $name }, sub {
+    my($person, $err, $father) = @_;
     ok !$err, 'no error';
-    ok $cat->in_storage, 'cat in_storage';
+    ok $father->in_storage, 'father in_storage';
     ok $person->in_storage, 'person in_storage';
-    $id = $cat->id;
+    $id = $father->id;
     Mojo::IOLoop->stop;
   });
   Mojo::IOLoop->start;
 
-  $person->favorite_cat({ name => $name }, sub {
-    my($person, $err, $cat) = @_;
-    isnt $cat->id, $id, 'replaced cat';
+  $person->father({ name => $name }, sub {
+    my($person, $err, $father) = @_;
+    isnt $father->id, $id, 'replaced father';
     Mojo::IOLoop->stop;
   });
   Mojo::IOLoop->start;
 
-  $connection->collection('cat')->count(sub {
+  $connection->collection('person')->count(sub {
     my($cats, $n) = @_;
-    is $n, 1, 'just one cat in the database';
+    is $n, 2, 'two persons in the database';
     Mojo::IOLoop->stop;
   });
   Mojo::IOLoop->start;

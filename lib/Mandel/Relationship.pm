@@ -28,12 +28,8 @@ sub _load_class {
   $class;
 }
 
-# /foo/1/bar => foo_1_bar
-sub _sub_name {
-  local $_ = $_[1];
-  s!/!_!g;
-  s!^_+!!;
-  $_;
+sub _foreign_key {
+  sprintf '_id_%s', $_[1]->model->name;
 }
 
 =head1 SEE ALSO

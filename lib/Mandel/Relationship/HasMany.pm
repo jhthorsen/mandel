@@ -36,7 +36,7 @@ use Mojo::Util;
 
 =head2 create
 
-  $clsas->create($target => $field_name => 'Other::Document::Class');
+  $clsas->create($target => $accessor => 'Other::Document::Class');
 
 =cut
 
@@ -50,13 +50,10 @@ sub create {
 }
 
 sub _other_objects {
-  my($class, $field, $other) = @_;
-  my $sub_name = $class->_sub_name($field);
-  my $search = "search_$sub_name";
+  my($class, $accessor, $other) = @_;
+  my $search = "search_$accessor";
 
-  $field = "/$field" unless $field =~ m!^/!;
-
-  return $sub_name => sub {
+  return $accessor => sub {
     my($self, $cb) = @_;
 
     $self->$search->all(sub {
@@ -69,15 +66,15 @@ sub _other_objects {
 }
 
 sub _add_other_object {
-  my($class, $field, $other) = @_;
-  my $sub_name = sprintf 'add_%s', $class->_sub_name($field);
+  my($class, $accessor, $other) = @_;
+  my $reverse;
 
   # Ex: persons => person
-  $sub_name =~ s/s$//;
-  $field = "/$field" unless $field =~ m!^/!;
+  $accessor =~ s/s$//;
 
-  return $sub_name => sub {
+  return "add_$accessor" => sub {
     my($self, $obj, $cb) = @_;
+    my $foreign = $class->_foreign_key($self);
 
     if(ref $obj eq 'HASH') {
       my $model = $class->_load_class($other)->model;
@@ -87,14 +84,8 @@ sub _add_other_object {
     Mojo::IOLoop->delay(
       sub {
         my($delay) = @_;
-        $obj->save($delay->begin);
-      },
-      sub {
-        my($delay, $err) = @_;
-        return $self->$cb($err, $obj) if $err;
-        my $ids = $self->get($field) || [];
-        push @$ids, $obj->id;
-        $self->set($field, $ids)->save($delay->begin);
+        $obj->set("/$foreign" => $self->id)->save($delay->begin);
+        $self->save($delay->begin) unless $self->in_storage;
       },
       sub {
         my($delay, $err) = @_;
@@ -107,24 +98,21 @@ sub _add_other_object {
 }
 
 sub _search_other_objects {
-  my($class, $field, $other) = @_;
-  my $sub_name = sprintf 'search_%s', $class->_sub_name($field);
+  my($class, $accessor, $other) = @_;
 
-  $field = "/$field" unless $field =~ m!^/!;
-
-  return $sub_name => sub {
+  return "search_$accessor" => sub {
     my($self, $query, $extra) = @_;
-    my $ids = $self->get($field) || [];
     my $model = $class->_load_class($other)->model;
+    my $foreign = $class->_foreign_key($self);
 
     $model->collection_class->new(
       connection => $self->connection,
       model => $model,
+      extra => $extra || {},
       query => {
         %{ $query || {} },
-        _id => { '$in' => [ @$ids ] },
+        $foreign => $self->id,
       },
-      extra => $extra || {},
     );
   };
 }
