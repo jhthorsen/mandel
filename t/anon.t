@@ -22,7 +22,7 @@ my $cat = $connection->model(cat => {})->model('cat');
   is $cat->collection_class, 'Custom::Collection', 'set collection_class';
   isa_ok $cat->collection_class, 'Mandel::Collection';
 
-  is $cat->collection, 'cats', 'collection generated from name';
+  is $cat->collection_name, 'cats', 'collection generated from name';
 }
 
 done_testing;

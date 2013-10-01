@@ -1,21 +1,11 @@
-use warnings;
-use strict;
+use t::Online;
 use Test::More;
-use Mandel ();
 
-plan skip_all => 'Set TEST_ONLINE to test' unless $ENV{TEST_ONLINE};
 plan tests => 8;
 
-my $db = "mandel_test_$0"; $db =~ s/\W/_/g;
-my $connection = Mandel->connect("mongodb://localhost/$db");
-my($collection, $id, $iterator);
-
-$connection
-  ->model(person => {})
-  ->model('person')
-  ->add_field([qw/ age name /]);
-
-$collection = $connection->collection('person');
+my $connection = t::Online->mandel;
+my $collection = $connection->collection('person');
+my($id, $iterator);
 
 {
   $collection->save({ name => 'Bruce' }, sub {
@@ -47,3 +37,5 @@ $collection = $connection->collection('person');
   });
   Mojo::IOLoop->start;
 }
+
+$connection->storage->db->command(dropDatabase => 1);

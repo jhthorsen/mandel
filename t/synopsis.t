@@ -10,6 +10,10 @@ my $db = "mandel_test_$0"; $db =~ s/\W/_/g;
   package MyModel;
   use Mandel;
 
+  package MyModel::Cat;
+  use Mandel::Document;
+  field [qw( name type )];
+
   package MyModel::Person;
   use Mandel::Document;
   field [qw( name age )];
@@ -65,7 +69,7 @@ $connection->storage->db->command(dropDatabase => 1);
     my($persons, $err, $person) = @_;
     isa_ok $persons, 'Mandel::Collection';
     isa_ok $person, 'MyModel::Person';
-    ok !$err, 'all: no error' or diag $err;
+    ok !$err, 'search: no error' or diag $err;
 
     $person->cats(sub {
       my($person, $err, $cats) = @_;

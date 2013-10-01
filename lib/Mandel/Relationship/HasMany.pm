@@ -31,7 +31,6 @@ Will add:
 
 use Mojo::Base 'Mandel::Relationship';
 use Mojo::Util;
-use Mango::Collection;
 
 =head1 METHODS
 
@@ -52,14 +51,16 @@ sub create {
 
 sub _other_objects {
   my($class, $field, $other) = @_;
-  my $search = "search_$field";
+  my $sub_name = $class->_sub_name($field);
+  my $search = "search_$sub_name";
 
-  return $field => sub {
+  $field = "/$field" unless $field =~ m!^/!;
+
+  return $sub_name => sub {
     my($self, $cb) = @_;
 
     $self->$search->all(sub {
       my($collection, $err, $objs) = @_;
-      return $self->$cb($err) if $err;
       $self->$cb($err, $objs);
     });
 
@@ -69,24 +70,37 @@ sub _other_objects {
 
 sub _add_other_object {
   my($class, $field, $other) = @_;
-  my $singular = $field;
+  my $sub_name = sprintf 'add_%s', $class->_sub_name($field);
 
   # Ex: persons => person
-  $singular =~ s/s$//;
+  $sub_name =~ s/s$//;
+  $field = "/$field" unless $field =~ m!^/!;
 
-  return "add_$singular" => sub {
+  return $sub_name => sub {
     my($self, $obj, $cb) = @_;
 
     if(ref $obj eq 'HASH') {
-      $obj = $class->_load_class($other)->new(%$obj, model => $self->model);
+      my $model = $class->_load_class($other)->model;
+      $obj = $model->collection_class->new({ connection => $self->connection, model => $model })->create($obj);
     }
 
-    $obj->_collection->save($obj->_raw, sub {
-      my($collection, $err, $doc);
-      $self->$cb($err, $obj) if $err;
-      push @{ $self->{_raw}{$field} }, $obj->id;
-      $self->$cb($err, $obj);
-    });
+    Mojo::IOLoop->delay(
+      sub {
+        my($delay) = @_;
+        $obj->save($delay->begin);
+      },
+      sub {
+        my($delay, $err) = @_;
+        return $self->$cb($err, $obj) if $err;
+        my $ids = $self->get($field) || [];
+        push @$ids, $obj->id;
+        $self->set($field, $ids)->save($delay->begin);
+      },
+      sub {
+        my($delay, $err) = @_;
+        $self->$cb($err, $obj);
+      },
+    );
 
     $self;
   };
@@ -94,17 +108,23 @@ sub _add_other_object {
 
 sub _search_other_objects {
   my($class, $field, $other) = @_;
+  my $sub_name = sprintf 'search_%s', $class->_sub_name($field);
 
-  return "search_$field" => sub {
-    my($self) = @_;
-    my $ids = $self->{_raw}{$field} || [];
+  $field = "/$field" unless $field =~ m!^/!;
 
-    return Mandel::Collection->new(
+  return $sub_name => sub {
+    my($self, $query, $extra) = @_;
+    my $ids = $self->get($field) || [];
+    my $model = $class->_load_class($other)->model;
+
+    $model->collection_class->new(
       connection => $self->connection,
-      model => $self->model,
+      model => $model,
       query => {
-        _id => { '$all' => [ @$ids ] },
+        %{ $query || {} },
+        _id => { '$in' => [ @$ids ] },
       },
+      extra => $extra || {},
     );
   };
 }

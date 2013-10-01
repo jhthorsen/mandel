@@ -21,7 +21,7 @@ my $ANON = 1;
 
 =head1 ATTRIBUTES
 
-=head2 collection
+=head2 collection_name
 
 The name of the collection in the database. Default is the plural form of L</name>.
 
@@ -41,12 +41,12 @@ L<Mandel/collection>.
 
 =cut
 
-has collection => sub {
+has collection_name => sub {
   my $self = shift;
   my $name = $self->name;
 
   return $name =~ /s$/ ? $name : $name .'s' if $name;
-  confess "collection or name required in constructor";
+  confess "collection_name or name required in constructor";
 };
 
 has collection_class => 'Mandel::Collection';
@@ -123,6 +123,21 @@ sub add_relationship {
   $class->create($self->document_class, $field, $other);
   $self->{relationship}{$field} = $class; # TODO: The value can be redefined any time
   $self;
+}
+
+=head2 new_collection
+
+  $self->new_collection($connection);
+
+Returns a new instance of L</collection_class>.
+
+=cut
+
+sub new_collection {
+  $_[0]->collection_class->new({
+    connection => $_[1] || confess('$model->new_collection($connection)'),
+    model => $_[0],
+  });
 }
 
 =head1 SEE ALSO

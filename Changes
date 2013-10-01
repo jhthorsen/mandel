@@ -1,12 +1,15 @@
 Revision history for Mandel
 
-0.04
-       * Add MYMETA* to Makefile.PL
+0.04     Tue Oct  1 17:08:53 2013
+       * Add support for has_one() and has_many('/json/pointer')
+       * Add support for MANDEL_CURSOR_DEBUG=1
+       * Add MYMETA* to MANIFEST.SKIP
+       * Rename Model::collection() to Model::collection_name
+       * Add Model::new_collection()
 
 0.03     Tue Oct  1 12:39:20 2013
        * Fix default collection name on custom document base class
        * Add Mandel::Collection::patch()
-       * Add support for has_one() and has_many('/json/pointer')
 
 0.02     Sat Sep 28 12:02:38 2013
        * Add Mandel::Collection::save()

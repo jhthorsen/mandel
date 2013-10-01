@@ -27,7 +27,6 @@ Will add:
 
 use Mojo::Base 'Mandel::Relationship';
 use Mojo::Util;
-use Mango::Collection;
 
 =head1 METHODS
 
@@ -46,40 +45,46 @@ sub create {
 
 sub _other_object {
   my($class, $field, $other) = @_;
-  my $sub_name = $field;
-
-  # /foo/1/bar => foo_1_bar
-  $sub_name =~ s!/!_!;
-  $sub_name =~ s!^_+!!;
+  my $sub_name = $class->_sub_name($field);
 
   return $sub_name => sub {
     my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
     my $self = shift;
     my $obj = shift;
+    my $other_collection = $class->_load_class($other)->model->new_collection($self->connection);
 
     if($obj) { # set ===========================================================
       if(ref $obj eq 'HASH') {
-        $obj = $class->_load_class($other)->new(%$obj, model => $self->model, connection => $self->connection);
+        $obj = $other_collection->create($obj);
       }
 
-      $obj->save(sub {
-        my($obj, $err, $doc) = @_;
-        $self->$cb($err, $obj) if $err;
-        $self->set($field => $obj->id);
-        $self->{_raw}{$field} = $obj->id; # TODO: Should this also be saved to database?
-        $self->{$sub_name} = $obj;
-        $self->$cb($err, $obj);
-      });
+      Mojo::IOLoop->delay(
+        sub {
+          my($delay) = @_;
+          my $old = $self->get($field);
+          $obj->save($delay->begin);
+          $other_collection->search({ _id => $old })->remove($delay->begin) if $old;
+        },
+        sub {
+          my($delay, $err) = @_;
+          return $self->$cb($err, $obj) if $err;
+          $self->set($field => $obj->id)->save($delay->begin);
+        },
+        sub {
+          my($delay, $err) = @_;
+          $self->$cb($err, $obj);
+        },
+      );
     }
     else { # get =============================================================
-      my $collection = $self->connection->_collection($other->description->collection);
-      $collection->find_one({ _id => $self->get($field) }, sub {
-        my($collection, $err, $doc);
-        $self->$cb($err, $obj) if $err;
-        $obj = $class->_load_class($other)->new(%$doc, model => $self->model, connection => $self->connection);
-        $self->{$sub_name} = $obj;
-        $self->$cb($err, $obj);
-      });
+      my $model = $class->_load_class($other)->model;
+      $model->collection_class
+        ->new({ connection => $self->connection, model => $model })
+        ->search({ _id => $self->get($field) })
+        ->single(sub {
+          my($collection, $err, $obj) = @_;
+          $self->$cb($err, $obj);
+        });
     }
 
     $self;

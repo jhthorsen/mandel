@@ -5,6 +5,10 @@ SYNOPSIS
       package MyModel;
       use Mandel;
 
+      package MyModel::Cat;
+      use Mandel::Document;
+      field [qw( name type )];
+
       package MyModel::Person;
       use Mandel::Document;
       field [qw( name age )];

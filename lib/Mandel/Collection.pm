@@ -26,6 +26,7 @@ use Mandel::Iterator;
 use Mango::BSON ':bson';
 use Scalar::Util 'blessed';
 use Carp 'confess';
+use constant DEBUG => $ENV{MANDEL_CURSOR_DEBUG} ? eval 'require Data::Dumper;1' : 0;
 
 =head1 ATTRIBUTES
 
@@ -42,9 +43,9 @@ An object that inherit from L<Mandel::Model>.
 has connection => sub { confess "connection required in constructor" };
 has model => sub { confess "model required in constructor" };
 
-has _collection => sub {
+has _storage_collection => sub {
   my $self = shift;
-  $self->connection->_collection($self->model->collection);
+  $self->connection->_storage_collection($self->model->collection_name);
 };
 
 =head1 METHODS
@@ -163,7 +164,7 @@ sub patch {
     return $self;
   }
 
-  $self->_collection->update(
+  $self->_storage_collection->update(
     { _id => ref $id ? $id : bson_oid $id },
     { '$set' => $patch },
     sub {
@@ -177,9 +178,9 @@ sub patch {
 
 =head2 remove
 
-  $self = $self->remove(\%query, \%extra, sub { my($self, $err, $doc) = @_; });
+  $self = $self->remove(sub { my($self, $err, $doc) = @_; });
 
-Remove the documents that match the given query.
+Remove the documents that query given to L</search>.
 
 =cut
 
@@ -187,7 +188,7 @@ sub remove {
   my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
   my $self = shift;
 
-  $self->_collection->remove(@_, $cb);
+  $self->_storage_collection->remove($self->{query}, $cb);
   $self;
 }
 
@@ -204,7 +205,7 @@ sub save {
 
   $raw->{_id} ||= bson_oid;
 
-  $self->_collection->save($raw, sub {
+  $self->_storage_collection->save($raw, sub {
     my($collection, $err, $doc) = @_;
     $self->$cb($err, $self->_new_document($raw, 1));
   });
@@ -258,10 +259,11 @@ sub single {
 sub _new_cursor {
   my $self = shift;
   my $extra = $self->{extra} || {};
-  my $cursor = $self->_collection->find;
+  my $cursor = $self->_storage_collection->find;
 
   $cursor->query($self->{query}) if $self->{query};
   $cursor->$_($extra->{$_}) for keys %$extra;
+  warn Data::Dumper->new([$cursor])->Indent(1)->Sortkeys(1)->Terse(1)->Dump if DEBUG;
   $cursor;
 };
 

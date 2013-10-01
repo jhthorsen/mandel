@@ -9,6 +9,10 @@ Mandel - Async model layer for MongoDB objects using Mango
   package MyModel;
   use Mandel;
 
+  package MyModel::Cat;
+  use Mandel::Document;
+  field [qw( name type )];
+
   package MyModel::Person;
   use Mandel::Document;
   field [qw( name age )];
@@ -84,7 +88,7 @@ use Mandel::Model;
 use Mango;
 use Carp 'confess';
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 my $LOADER = Mojo::Loader->new;
 
@@ -260,7 +264,7 @@ sub initialize {
 
   for my $document ( @documents ) {
     my $class = $self->class_for($document);
-    my $collection = $self->_collection($class->collection);
+    my $collection = $self->_storage_collection($class->collection);
     $class->initialize($self, $collection);
   }
 }
@@ -279,7 +283,7 @@ sub import {
   goto &Mojo::Base::import;
 }
 
-sub _collection {
+sub _storage_collection {
   $_[0]->storage->db->collection($_[1]);
 }
 

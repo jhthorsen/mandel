@@ -26,8 +26,8 @@ isa_ok 'Custom::Base::Class', 'Mandel::Document';
 }
 
 {
-  is Custom::Base::Class->model->collection, 'class', 'class collection';
-  is My::Document->model->collection, 'documents', 'models collection';
+  is Custom::Base::Class->model->collection_name, 'class', 'class collection';
+  is My::Document->model->collection_name, 'documents', 'models collection';
 }
 
 done_testing;

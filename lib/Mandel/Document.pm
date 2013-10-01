@@ -42,7 +42,7 @@ use Mojo::Util qw( monkey_patch );
 use Mandel::Model;
 use Mango::BSON::ObjectID;
 use Scalar::Util 'looks_like_number';
-use Carp 'croak';
+use Carp 'confess';
 
 my $POINTER = Mojo::JSON::Pointer->new;
 
@@ -106,14 +106,14 @@ many times the field has been updated before saved..?
 
 =cut
 
-has connection => sub { die "connection required in constructor" };
-has model => sub { die "model required in constructor" };
+has connection => sub { confess "connection required in constructor" };
+has model => sub { confess "model required in constructor" };
 has dirty => sub { +{} };
 has in_storage => 0;
 
 has _collection => sub {
   my $self = shift;
-  $self->connection->_collection($self->model->collection);
+  $self->connection->_storage_collection($self->model->collection_name);
 };
 
 has _raw => sub { +{} }; # raw mongodb document data
@@ -195,7 +195,7 @@ all fields as L</dirty>.
 sub remove {
   my($self, $cb) = @_;
 
-  $self->_collection->remove({ _id => $self->id }, sub {
+  $self->_collection->remove({ _id => $self->id }, { single => 1 }, sub {
     my($collection, $err, $doc);
     unless($err) {
       $self->dirty->{$_} = 1 for keys %{ $self->_raw };
@@ -215,14 +215,14 @@ This method stores the raw data in the database and collection. It clear
 the L</dirty> attribute.
 
 NOTE: This method will call the callback (with $err set to empty string)
-immediately unless L</is_changed> returns true.
+immediately unless L</is_changed> is true and L</in_storage> is false.
 
 =cut
 
 sub save {
   my($self, $cb) = @_;
 
-  unless($self->is_changed) {
+  if(!$self->is_changed and $self->in_storage) {
     $self->$cb('');
     return $self;
   }
@@ -274,7 +274,7 @@ sub set {
     }
     elsif($type eq 'ARRAY') {
       if($want ne 'INDEX') {
-        croak "Cannot set $want in $type for /$pointer ($p)";
+        confess "Cannot set $want in $type for /$pointer ($p)";
       }
       elsif(@path) {
         $raw = $raw->[$p] ||= looks_like_number $path[0] ? [] : {};
@@ -284,7 +284,7 @@ sub set {
       }
     }
     else {
-      croak "Cannot set $want in SCALAR for /$pointer ($p)";
+      confess "Cannot set $want in SCALAR for /$pointer ($p)";
     }
   }
 
@@ -300,18 +300,18 @@ See L</SYNOPSIS>.
 
 sub import {
   my $class = shift;
-  my %args = @_ == 1 ? (collection => shift, @_) : @_;
+  my %args = @_ == 1 ? (collection_name => shift, @_) : @_;
   my $caller = caller;
   my $model = Mandel::Model->new(document_class => $caller, %args);
   my $base_class = 'Mandel::Document';
 
-  if($args{collection} and $args{collection} =~ /::/) {
-    $base_class = delete $args{collection};
+  if($args{collection_name} and $args{collection_name} =~ /::/) {
+    $base_class = delete $args{collection_name};
   }
-  if(!$args{collection}) {
-    $args{collection} = Mojo::Util::decamelize(($caller =~ /(\w+)$/)[0]);
-    $args{collection} .= 's' unless $args{collection} =~ /s$/;
-    $model->collection($args{collection});
+  if(!$args{collection_name}) {
+    $args{collection_name} = Mojo::Util::decamelize(($caller =~ /(\w+)$/)[0]);
+    $args{collection_name} .= 's' unless $args{collection_name} =~ /s$/;
+    $model->collection_name($args{collection_name});
   }
 
   monkey_patch $caller, field => sub { $model->add_field(@_) };
