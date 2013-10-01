@@ -1,5 +1,8 @@
 Revision history for Mandel
 
+0.04
+       * Add MYMETA* to Makefile.PL
+
 0.03     Tue Oct  1 12:39:20 2013
        * Fix default collection name on custom document base class
        * Add Mandel::Collection::patch()

@@ -6,3 +6,4 @@
 ^blib/
 ^Makefile$
 ^Mandel
+^MYMETA\.
