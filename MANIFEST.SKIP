@@ -5,5 +5,4 @@
 ~$
 ^blib/
 ^Makefile$
-^MANIFEST.*
 ^Mandel
