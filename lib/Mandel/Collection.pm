@@ -247,7 +247,7 @@ C<%search> query.
 
 sub single {
   my($self, $cb) = @_;
-  
+
   $self->_new_cursor->limit(-1)->next(sub {
     my($cursor, $err, $doc) = @_;
     $self->$cb($err, $doc ? $self->_new_document($doc, 1) : undef);
@@ -263,7 +263,7 @@ sub _new_cursor {
 
   $cursor->query($self->{query}) if $self->{query};
   $cursor->$_($extra->{$_}) for keys %$extra;
-  warn Data::Dumper->new([$cursor])->Indent(1)->Sortkeys(1)->Terse(1)->Dump if DEBUG;
+  warn '[', +(caller 1)[3], '] ', Data::Dumper->new([$cursor])->Indent(1)->Sortkeys(1)->Terse(1)->Maxdepth(3)->Dump if DEBUG;
   $cursor;
 };
 

@@ -314,6 +314,7 @@ sub import {
     $model->collection_name($args{collection_name});
   }
 
+  monkey_patch $caller, belongs_to => sub { $model->add_relationship(belongs_to => @_) };
   monkey_patch $caller, field => sub { $model->add_field(@_) };
   monkey_patch $caller, has_many => sub { $model->add_relationship(has_many => @_) };
   monkey_patch $caller, has_one => sub { $model->add_relationship(has_one => @_) };

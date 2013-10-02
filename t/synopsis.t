@@ -13,6 +13,7 @@ my $db = "mandel_test_$0"; $db =~ s/\W/_/g;
   package MyModel::Cat;
   use Mandel::Document;
   field [qw( name type )];
+  belongs_to person => 'MyModel::Person';
 
   package MyModel::Person;
   use Mandel::Document;

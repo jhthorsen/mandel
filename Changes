@@ -2,13 +2,14 @@ Revision history for Mandel
 
 0.05
        * Change has_one/has_many documents point back to the "owner".
+       * Add belongs_to relationship
 
 0.04     Tue Oct  1 17:08:53 2013
        * Add support for has_one() and has_many('/json/pointer')
        * Add support for MANDEL_CURSOR_DEBUG=1
        * Add MYMETA* to MANIFEST.SKIP
-       * Rename Model::collection() to Model::collection_name
        * Add Model::new_collection()
+       * Rename Model::collection() to Model::collection_name
 
 0.03     Tue Oct  1 12:39:20 2013
        * Fix default collection name on custom document base class
