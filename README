@@ -7,12 +7,16 @@ SYNOPSIS
 
       package MyModel::Cat;
       use Mandel::Document;
-      field [qw( name type )];
+      use Types::Standard 'Str';
+      field name => ( isa => Str );
+      field 'type';
       belongs_to person => 'MyModel::Person';
 
       package MyModel::Person;
       use Mandel::Document;
-      field [qw( name age )];
+      use Types::Standard 'Int';
+      field [qw( name )];
+      field age => ( isa => Int );
       has_many cats => 'MyModel::Cat';
       has_one favorite_cat => 'MyModel::Cat';
 

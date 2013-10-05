@@ -73,25 +73,28 @@ has name => '';
 
 =head2 add_field
 
-  $self = $self->add_field('name');
-  $self = $self->add_field(['name1', 'name2']);
+  $self = $self->add_field('name', %args);
+  $self = $self->add_field(['name1', 'name2'], %args);
 
 Used to define new field(s) to the document.
 
 =cut
 
 sub add_field {
-  my($self, $fields) = @_;
+  my($self, $fields, %args) = @_;
   my $class = $self->document_class;
 
   # Compile fieldibutes
-  for my $field (@{ref $fields eq 'ARRAY' ? $fields : [$fields]}) {
-    my $code = "package $class;\nsub $field {\n my \$r = \$_[0]->_raw;";
-    $code .= "if (\@_ == 1) {\n";
-    $code .= "    \$_[0]->{dirty}{$field} = 1;";
-    $code .= "    return \$r->{'$field'};";
-    $code .= "\n  }\n  \$r->{'$field'} = \$_[1];\n";
-    $code .= "  \$_[0];\n}";
+  for my $field (@{ ref $fields eq 'ARRAY' ? $fields : [$fields] }) {
+    my $code = "";
+
+    $code .= "package $class;\nsub $field {\n my \$raw = \$_[0]->_raw;\n";
+    $code .= "return \$raw->{'$field'} if \@_ == 1;\n";
+    $code .= "local \$_ = \$_[1];\n";
+    $code .= $self->_field_type($args{isa}) if $args{isa};
+    $code .= "\$_[0]->{dirty}{$field} = 1;";
+    $code .= "\$raw->{'$field'} = \$_;\n";
+    $code .= "return \$_[0];\n}";
 
     # We compile custom attribute code for speed
     no strict 'refs';
@@ -100,6 +103,22 @@ sub add_field {
   }
 
   $self;
+}
+
+sub _field_type {
+  my($self, $type) = @_;
+  my $code = "";
+
+  use Types::Standard qw( Num );
+
+  if($type->can_be_inlined) {
+    $code .= $type->inline_assert('$_');
+  }
+  if($type->is_a_type_of(Num)) {
+    $code .= "\$_ += 0;\n";
+  }
+
+  return $code;
 }
 
 =head2 add_relationship
