@@ -194,6 +194,9 @@ all fields as L</dirty>.
 
 sub remove {
   my($self, $cb) = @_;
+  my $delay;
+
+  ($delay, $cb) = $self->_blocking unless $cb;
 
   $self->_collection->remove({ _id => $self->id }, { single => 1 }, sub {
     my($collection, $err, $doc);
@@ -204,7 +207,8 @@ sub remove {
     $self->$cb($err);
   });
 
-  $self;
+  return $delay->wait if $delay;
+  return $self;
 }
 
 =head2 save
@@ -221,9 +225,13 @@ immediately unless L</is_changed> is true and L</in_storage> is false.
 
 sub save {
   my($self, $cb) = @_;
+  my $delay;
+
+  ($delay, $cb) = $self->_blocking unless $cb;
 
   if(!$self->is_changed and $self->in_storage) {
     $self->$cb('');
+    return $delay->wait if $delay;
     return $self;
   }
 
@@ -238,7 +246,8 @@ sub save {
     $self->$cb($err);
   });
 
-  $self;
+  return $delay->wait if $delay;
+  return $self;
 }
 
 =head2 set
@@ -322,6 +331,14 @@ sub import {
 
   @_ = ($class, $base_class);
   goto &Mojo::Base::import;
+}
+
+sub _blocking {
+  my $self = @_;
+  my $delay = Mojo::IOLoop->delay;
+  my $cb = $delay->begin;
+
+  $delay, sub { $cb->(@_); };
 }
 
 =head1 SEE ALSO

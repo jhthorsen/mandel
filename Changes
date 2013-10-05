@@ -3,6 +3,8 @@ Revision history for Mandel
 0.06
        * Add support for isa. This also will force numbers to be coerced
          from strings to actual numbers.
+       * Add support for perl -Mandel -e'...'
+       * Add support for blocking method call
 
 0.05     Sat Oct  5 13:02:14 2013
        * Change has_one/has_many documents point back to the "owner".
