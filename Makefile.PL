@@ -8,7 +8,7 @@ WriteMakefile(
   PREREQ_PM => {
     'Mango' => '0.12',
     'Mojolicious' => '3.40',
-    'Type::Tiny' => '0.014';
+    'Type::Tiny' => '0.014',
   },
   BUILD_REQUIRES => {
     'Test::More' => '0.90',
