@@ -1,6 +1,6 @@
 Revision history for Mandel
 
-0.05
+0.05     Sat Oct  5 13:02:14 2013
        * Change has_one/has_many documents point back to the "owner".
        * Add belongs_to relationship
 

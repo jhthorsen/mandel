@@ -89,7 +89,7 @@ use Mandel::Model;
 use Mango;
 use Carp 'confess';
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 my $LOADER = Mojo::Loader->new;
 
