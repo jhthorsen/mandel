@@ -110,7 +110,11 @@ sub count {
   ($delay, $cb) = $self->_blocking unless $cb;
   $self->_new_cursor->count(sub { $self->$cb($_[2]) });
 
-  return $delay->wait if $delay;
+  if($delay) {
+    $delay->begin->(''); # hack _blocking() callback
+    return $delay->wait;
+  }
+
   return $self;
 }
 
@@ -287,9 +291,16 @@ sub single {
 sub _blocking {
   my $self = @_;
   my $delay = Mojo::IOLoop->delay;
-  my $cb = $delay->begin;
+  my $cb = $delay->begin(0);
 
-  $delay, sub { $cb->(@_); };
+  return(
+    $delay,
+    sub {
+      die $_[1] if @_ == 3 and $_[1]; # err
+      $cb->($_[2]) if @_ == 3;
+      $cb->($_[1]);
+    },
+  )
 }
 
 sub _new_cursor {

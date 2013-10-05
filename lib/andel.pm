@@ -6,14 +6,48 @@ andel - Oneliner Mandel magic
 
 =head1 SYNOPSIS
 
-  perl -Mandel=MyModel -e'c("users", { name => "joe" })'
-  perl -Mandel=MyModel -e'c("users")->count'
+  perl -Mandel=MyModel -E'say c("users", j shift)->in_storage' '{"name":"joe"}'
+  perl -Mandel=MyModel -E'say c("users", { name => "joe" })->in_storage'
+  perl -Mandel=MyModel,db_name -E'say c("users")->count'
+  perl -Mandel=MyModel,mongodb://hostname/db_name -E'say c("users")->count'
 
 =cut
 
 use Mojo::Base -strict;
 
 my $mandel;
+
+=head1 EXPORTED FUNCTIONS
+
+=head2 c
+
+  $collection = c("collection_name");
+  $obj = c("collection_name", \%create_args);
+
+Alias for
+
+  $mandel->collection("collection_name");
+
+Or
+
+  $mandel->collection("collection_name")->create(\%create_args)->save;
+
+=cut
+
+sub c {
+  my $name = shift or die "Usage: c('collection_name')";
+  my $collection = $mandel->collection($name);
+
+  if(@_ and ref $_[0] eq 'HASH') {
+    return $collection->create($_[0])->save;
+  }
+
+  return $collection;
+}
+
+=head2 j
+
+See L<Mojo::JSON/j>.
 
 =head1 METHODS
 
@@ -27,28 +61,21 @@ sub import {
   my $class = shift;
   my $caller = caller;
 
-  @_ or die "Usage: perl -Mandel,My::Model -e'...'";
-  $class->_setup(@_);
+  strict->import;
+  warnings->import;
+
+  $class->_setup(@_) if @_;
+
   no strict 'refs';
-  *{"$caller\::c"} = \&_c;
+  *{"$caller\::c"} = \&c;
+  *{"$caller\::j"} = \&Mojo::JSON::j;
 }
 
 sub _setup {
-  my($class, $model, $database) = @_;
+  my($class, $model, @connect) = @_;
   eval "use $model; 1" or die "use $model: $@";
-  $database ||= 'test';
-  $mandel = $model->connect("mongodb://localhost/$database");
-}
-
-sub _c {
-  my $name = shift or die "Usage: c('collection_name')";
-  my $collection = $mandel->collection($name);
-
-  if(@_ and ref $_[0] eq 'HASH') {
-    return $collection->create($_[0]);
-  }
-
-  return $collection;
+  $connect[0] = "mongodb://localhost/$connect[0]" if @connect and $connect[0] !~ /^mongodb:/;
+  $mandel = $model->connect(@connect);
 }
 
 =head1 AUTHOR

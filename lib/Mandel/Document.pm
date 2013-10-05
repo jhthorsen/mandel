@@ -334,11 +334,17 @@ sub import {
 }
 
 sub _blocking {
-  my $self = @_;
+  my $self = shift;
   my $delay = Mojo::IOLoop->delay;
-  my $cb = $delay->begin;
+  my $cb = $delay->begin(0);
 
-  $delay, sub { $cb->(@_); };
+  return(
+    $delay,
+    sub {
+      die $_[1] if $_[1]; # err
+      $cb->($self);
+    },
+  );
 }
 
 =head1 SEE ALSO
