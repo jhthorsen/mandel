@@ -1,6 +1,6 @@
 Revision history for Mandel
 
-0.06
+0.06     Sat Oct  5 15:43:51 2013
        * Add support for isa. This also will force numbers to be coerced
          from strings to actual numbers.
        * Add support for perl -Mandel -e'...'
