@@ -71,16 +71,16 @@ has name => '';
 
 =head1 METHODS
 
-=head2 add_field
+=head2 field
 
-  $self = $self->add_field('name', %args);
-  $self = $self->add_field(['name1', 'name2'], %args);
+  $self = $self->field('name', %args);
+  $self = $self->field(['name1', 'name2'], %args);
 
 Used to define new field(s) to the document.
 
 =cut
 
-sub add_field {
+sub field {
   my($self, $fields, %args) = @_;
   my $class = $self->document_class;
 
