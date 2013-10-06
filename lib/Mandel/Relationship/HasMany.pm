@@ -31,6 +31,7 @@ Will add:
 
 use Mojo::Base 'Mandel::Relationship';
 use Mojo::Util;
+use Mango::BSON 'bson_dbref';
 
 =head1 ATTRIBUTES
 
@@ -86,16 +87,16 @@ sub _monkey_patch_add_method {
 
   Mojo::Util::monkey_patch($self->document_class, $self->add_method_name, sub {
     my($doc, $obj, $cb) = @_;
+    my $related_model = $self->_related_model;
 
     if(ref $obj eq 'HASH') {
-      my $related_model = $self->_related_model;
-      $obj = $related_model->collection_class->new({ connection => $doc->connection, model => $related_model })->create($obj);
+      $obj = $related_model->new_collection($doc->connection)->create($obj);
     }
 
     Mojo::IOLoop->delay(
       sub {
         my($delay) = @_;
-        $obj->_raw->{$foreign_field } = $doc->id;
+        $obj->_raw->{$foreign_field} = bson_dbref $related_model->name, $doc->id;
         $obj->save($delay->begin);
         $doc->save($delay->begin);
       },
@@ -120,13 +121,12 @@ sub _monkey_patch_search_method {
     my($doc, $query, $extra) = @_;
     my $related_model = $self->_related_model;
 
-    return $related_model->collection_class->new(
-      connection => $doc->connection,
-      model => $related_model,
+    return $related_model->new_collection(
+      $doc->connection,
       extra => $extra || {},
       query => {
         %{ $query || {} },
-        $foreign_field => $doc->id,
+        sprintf('%s.$id', $foreign_field) => $doc->id,
       },
     );
   });

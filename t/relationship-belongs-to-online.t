@@ -1,7 +1,7 @@
 use t::Online;
 use Test::More;
 
-plan tests => 7;
+plan tests => 8;
 my $connection = t::Online->mandel;
 my $name = rand;
 
@@ -35,6 +35,7 @@ $connection->storage->db->command(dropDatabase => 1);
   $cat->person({ name => $name }, sub {
     my($cat, $err, $person) = @_;
     isnt $person->id, $id, 'add new person';
+    $id = $person->id;
     Mojo::IOLoop->stop;
   });
   Mojo::IOLoop->start;
@@ -46,6 +47,12 @@ $connection->storage->db->command(dropDatabase => 1);
   });
   Mojo::IOLoop->start;
 
+  $cat->person(sub {
+    my($cat, $err, $person) = @_;
+    is $person->id, $id, 'got person';
+    Mojo::IOLoop->stop;
+  });
+  Mojo::IOLoop->start;
 }
 
 $connection->storage->db->command(dropDatabase => 1);

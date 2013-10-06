@@ -217,9 +217,8 @@ Returns a L<Mango::Collection> object.
 
 sub collection {
   my($self, $name) = @_;
-  my $model = $self->model($name);
 
-  $model->collection_class->new(model => $model, connection => $self);
+  $self->model($name)->new_collection($self);
 }
 
 =head2 model

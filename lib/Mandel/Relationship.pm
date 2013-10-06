@@ -44,7 +44,7 @@ Holds the related document class name.
 
 has accessor => '';
 has document_class => '';
-has foreign_field => sub { sprintf '_id_%s', shift->document_class->model->name };
+has foreign_field => sub { shift->document_class->model->name };
 has related_class => '';
 
 # is this a bad memory leak? $model => $rel_obj => $_related_model

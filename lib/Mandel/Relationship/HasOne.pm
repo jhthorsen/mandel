@@ -27,6 +27,7 @@ Will add:
 
 use Mojo::Base 'Mandel::Relationship';
 use Mojo::Util;
+use Mango::BSON 'bson_dbref';
 
 =head1 METHODS
 
@@ -44,9 +45,11 @@ sub monkey_patch {
     my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
     my $doc = shift;
     my $obj = shift;
-    my $related_collection = $self->_related_model->new_collection($doc->connection);
+    my $related_model = $self->_related_model;
 
     if($obj) { # set ===========================================================
+      my $related_collection = $self->_related_model->new_collection($doc->connection);
+
       if(ref $obj eq 'HASH') {
         $obj = $related_collection->create($obj);
       }
@@ -54,12 +57,12 @@ sub monkey_patch {
       Mojo::IOLoop->delay(
         sub {
           my($delay) = @_;
-          $related_collection->search({ $foreign_field => $doc->id })->remove($delay->begin);
+          $related_collection->search({ sprintf('%s.$id', $foreign_field), $doc->id })->remove($delay->begin);
         },
         sub {
           my($delay, @err) = @_;
           $doc->save($delay->begin);
-          $obj->_raw->{$foreign_field} = $doc->id;
+          $obj->_raw->{$foreign_field} = bson_dbref $related_model->name, $doc->id;
           $obj->save($delay->begin);
         },
         sub {
@@ -69,11 +72,9 @@ sub monkey_patch {
       );
     }
     else { # get =============================================================
-      my $related_model = $self->_related_model;
       $related_model
-        ->collection_class
-        ->new({ connection => $doc->connection, model => $related_model })
-        ->search({ $foreign_field => $doc->id })
+        ->new_collection($doc->connection)
+        ->search({ sprintf('%s.$id', $foreign_field), $doc->id })
         ->single(sub { $doc->$cb(@_[1, 2]) });
     }
 

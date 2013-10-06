@@ -27,6 +27,7 @@ Will add:
 
 use Mojo::Base 'Mandel::Relationship';
 use Mojo::Util;
+use Mango::BSON 'bson_dbref';
 
 =head1 ATTRIBUTES
 
@@ -36,7 +37,7 @@ The name of the field in this class which hold the "_id" to the related doc.
 
 =cut
 
-has foreign_field => sub { sprintf '_id_%s', shift->accessor };
+has foreign_field => sub { shift->accessor };
 
 =head1 METHODS
 
@@ -65,7 +66,7 @@ sub monkey_patch {
         sub {
           my($delay) = @_;
           $obj->save($delay->begin);
-          $doc->_raw->{$foreign_field} = $obj->id;
+          $doc->_raw->{$foreign_field} = bson_dbref $related_model->name, $obj->id;
           $doc->save($delay->begin);
         },
         sub {
@@ -75,9 +76,9 @@ sub monkey_patch {
       );
     }
     else { # get =============================================================
-      $related_model->collection_class
-        ->new({ connection => $doc->connection, model => $related_model })
-        ->search({ $foreign_field => $doc->id })
+      $related_model
+        ->new_collection($doc->connection)
+        ->search({ _id => $doc->_raw->{$foreign_field}{'$id'} })
         ->single(sub { $doc->$cb(@_[1, 2]) });
     }
 

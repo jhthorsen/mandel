@@ -21,7 +21,7 @@ my $name = rand;
 
   $cats = $person->search_cats({}, { limit => 10 });
   isa_ok $cats, 'Mandel::Collection';
-  is_deeply $cats->{query}, { _id_person => $person->id }, 'got correct cat query';
+  is_deeply $cats->{query}, { 'person.$id' => $person->id }, 'got correct cat query';
   is_deeply $cats->{extra}, { limit => 10 }, 'got correct cat extra';
 
   $cats->count(sub {

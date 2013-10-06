@@ -6,7 +6,7 @@ WriteMakefile(
   AUTHOR => 'Jan Henning Thorsen <jhthorsen@cpan.org>',
   LICENSE => 'perl',
   PREREQ_PM => {
-    'Mango' => '0.12',
+    'Mango' => '0.14',
     'Mojolicious' => '3.40',
     'Type::Tiny' => '0.014',
   },

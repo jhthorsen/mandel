@@ -164,9 +164,12 @@ Returns a new instance of L</collection_class>.
 =cut
 
 sub new_collection {
-  $_[0]->collection_class->new({
-    connection => $_[1] || confess('$model->new_collection($connection)'),
-    model => $_[0],
+  my($self, $connection, %args) = @_;
+
+  $self->collection_class->new({
+    connection => $connection || confess('$model->new_collection($connection)'),
+    model => $self,
+    %args,
   });
 }
 
