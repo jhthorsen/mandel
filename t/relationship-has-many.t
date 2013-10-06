@@ -10,9 +10,9 @@ ok !$person->document_class->can('cats'), 'person cannot cats()';
 ok !$person->document_class->can('add_cat'), 'person cannot add_cat()';
 ok !$person->document_class->can('search_cats'), 'person cannot search_cats()';
 
-is $person->add_relationship(has_many => cats => $cat->document_class), $person, 'add_relationship()';
+isa_ok $person->relationship(has_many => cats => $cat->document_class)->monkey_patch, 'Mandel::Relationship::HasMany';
 ok $person->document_class->can('cats'), 'person can cats()';
-ok $person->document_class->can('add_cat'), 'person can add_cat()';
+ok $person->document_class->can('add_cats'), 'person can add_cat()';
 ok $person->document_class->can('search_cats'), 'person can search_cats()';
 
 done_testing;

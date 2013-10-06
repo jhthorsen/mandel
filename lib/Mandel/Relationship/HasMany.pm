@@ -2,7 +2,7 @@ package Mandel::Relationship::HasMany;
 
 =head1 NAME
 
-Mandel::Relationship::HasOne - A field relates to many other mongodb document
+Mandel::Relationship::HasMany - A field relates to many other mongodb document
 
 =head1 DESCRIPTION
 
@@ -10,7 +10,7 @@ Example:
 
   MyModel::Cat
     ->description
-    ->add_relationship(has_many => owners => 'MyModel::Person');
+    ->relationship(has_many => owners => 'MyModel::Person');
 
 Will add:
 
@@ -32,89 +32,106 @@ Will add:
 use Mojo::Base 'Mandel::Relationship';
 use Mojo::Util;
 
-=head1 METHODS
+=head1 ATTRIBUTES
 
-=head2 create
+=head2 add_method_name
 
-  $clsas->create($target => $accessor => 'Other::Document::Class');
+The name of the method used to add another document to the .
+
+=head2 search_method_name
+
+The name of the method used to search related documents.
 
 =cut
 
-sub create {
-  my $class = shift;
-  my $target = shift;
+has add_method_name => sub { sprintf 'add_%s', shift->accessor };
+has search_method_name => sub { sprintf 'search_%s', shift->accessor };
 
-  Mojo::Util::monkey_patch($target => $class->_other_objects(@_));
-  Mojo::Util::monkey_patch($target => $class->_add_other_object(@_));
-  Mojo::Util::monkey_patch($target => $class->_search_other_objects(@_));
+=head1 METHODS
+
+=head2 monkey_patch
+
+Add methods to L<Mandel::Relationship/document_class>.
+
+=cut
+
+sub monkey_patch {
+  shift
+    ->_monkey_patch_all_method
+    ->_monkey_patch_add_method
+    ->_monkey_patch_search_method;
 }
 
-sub _other_objects {
-  my($class, $accessor, $other) = @_;
-  my $search = "search_$accessor";
+sub _monkey_patch_all_method {
+  my $self = shift;
+  my $search = $self->search_method_name;
 
-  return $accessor => sub {
-    my($self, $cb) = @_;
+  Mojo::Util::monkey_patch($self->document_class, $self->accessor, sub {
+    my($doc, $cb) = @_;
 
-    $self->$search->all(sub {
+    $doc->$search->all(sub {
       my($collection, $err, $objs) = @_;
-      $self->$cb($err, $objs);
+      $doc->$cb($err, $objs);
     });
 
-    $self;
-  };
+    return $doc;
+  });
+
+  return $self;
 }
 
-sub _add_other_object {
-  my($class, $accessor, $other) = @_;
-  my $reverse;
+sub _monkey_patch_add_method {
+  my $self = shift;
+  my $foreign_field = $self->foreign_field;
 
-  # Ex: persons => person
-  $accessor =~ s/s$//;
-
-  return "add_$accessor" => sub {
-    my($self, $obj, $cb) = @_;
-    my $foreign = $class->_foreign_key($self);
+  Mojo::Util::monkey_patch($self->document_class, $self->add_method_name, sub {
+    my($doc, $obj, $cb) = @_;
 
     if(ref $obj eq 'HASH') {
-      my $model = $class->_load_class($other)->model;
-      $obj = $model->collection_class->new({ connection => $self->connection, model => $model })->create($obj);
+      my $related_model = $self->_related_model;
+      $obj = $related_model->collection_class->new({ connection => $doc->connection, model => $related_model })->create($obj);
     }
 
     Mojo::IOLoop->delay(
       sub {
         my($delay) = @_;
-        $obj->set("/$foreign" => $self->id)->save($delay->begin);
-        $self->save($delay->begin) unless $self->in_storage;
+        $obj->_raw->{$foreign_field } = $doc->id;
+        $obj->save($delay->begin);
+        $doc->save($delay->begin);
       },
       sub {
-        my($delay, $err) = @_;
-        $self->$cb($err, $obj);
+        my($delay, @err) = @_;
+        $doc->$cb($err[-1], $obj);
       },
     );
 
-    $self;
-  };
+    return $doc;
+  });
+
+  return $self;
 }
 
-sub _search_other_objects {
-  my($class, $accessor, $other) = @_;
+sub _monkey_patch_search_method {
+  my $self = shift;
+  my $foreign_field = $self->foreign_field;
+  my $related_class = $self->related_class;
 
-  return "search_$accessor" => sub {
-    my($self, $query, $extra) = @_;
-    my $model = $class->_load_class($other)->model;
-    my $foreign = $class->_foreign_key($self);
+  Mojo::Util::monkey_patch($self->document_class, $self->search_method_name, sub {
+    my($doc, $query, $extra) = @_;
+    my $related_model = $self->_related_model;
 
-    $model->collection_class->new(
-      connection => $self->connection,
-      model => $model,
+    return $related_model->collection_class->new(
+      connection => $doc->connection,
+      model => $related_model,
       extra => $extra || {},
       query => {
         %{ $query || {} },
-        $foreign => $self->id,
+        $foreign_field => $doc->id,
       },
     );
-  };
+  });
+
+  return $self;
 }
 
 =head1 SEE ALSO

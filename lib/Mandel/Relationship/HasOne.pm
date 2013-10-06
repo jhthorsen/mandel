@@ -10,7 +10,7 @@ Example:
 
   MyModel::Cat
     ->description
-    ->add_relationship(has_one => owners => 'MyModel::Person');
+    ->relationship(has_one => owner => 'MyModel::Person');
 
 Will add:
 
@@ -30,63 +30,57 @@ use Mojo::Util;
 
 =head1 METHODS
 
-=head2 create
+=head2 monkey_patch
 
-  $clsas->create($target => $accessor => 'Other::Document::Class');
+Add methods to L<Mandel::Relationship/document_class>.
 
 =cut
 
-sub create {
-  my $class = shift;
-  my $target = shift;
+sub monkey_patch {
+  my $self = shift;
+  my $foreign_field = $self->foreign_field;
 
-  Mojo::Util::monkey_patch($target => $class->_other_object(@_));
-}
-
-sub _other_object {
-  my($class, $accessor, $other) = @_;
-
-  return $accessor => sub {
+  Mojo::Util::monkey_patch($self->document_class, $self->accessor, sub {
     my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
-    my $self = shift;
+    my $doc = shift;
     my $obj = shift;
-    my $other_collection = $class->_load_class($other)->model->new_collection($self->connection);
-    my $foreign = $class->_foreign_key($self);
+    my $related_collection = $self->_related_model->new_collection($doc->connection);
 
     if($obj) { # set ===========================================================
       if(ref $obj eq 'HASH') {
-        $obj = $other_collection->create($obj);
+        $obj = $related_collection->create($obj);
       }
 
       Mojo::IOLoop->delay(
         sub {
           my($delay) = @_;
-          $other_collection->search({ $foreign => $self->id })->remove($delay->begin);
+          $related_collection->search({ $foreign_field => $doc->id })->remove($delay->begin);
         },
         sub {
           my($delay, @err) = @_;
-          $self->save($delay->begin) unless $self->in_storage;
-          $obj->set("/$foreign", $self->id)->save($delay->begin);
+          $doc->save($delay->begin);
+          $obj->_raw->{$foreign_field} = $doc->id;
+          $obj->save($delay->begin);
         },
         sub {
           my($delay, @err) = @_;
-          $self->$cb($err[-1], $obj);
+          $doc->$cb($err[-1], $obj);
         },
       );
     }
     else { # get =============================================================
-      my $model = $class->_load_class($other)->model;
-      $model->collection_class
-        ->new({ connection => $self->connection, model => $model })
-        ->search({ $foreign => $self->id })
-        ->single(sub {
-          my($collection, $err, $obj) = @_;
-          $self->$cb($err, $obj);
-        });
+      my $related_model = $self->_related_model;
+      $related_model
+        ->collection_class
+        ->new({ connection => $doc->connection, model => $related_model })
+        ->search({ $foreign_field => $doc->id })
+        ->single(sub { $doc->$cb(@_[1, 2]) });
     }
 
-    $self;
-  };
+    return $doc;
+  });
+
+  return $self;
 }
 
 =head1 SEE ALSO

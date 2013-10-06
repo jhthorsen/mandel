@@ -43,6 +43,7 @@ use Mandel::Model;
 use Mango::BSON::ObjectID;
 use Scalar::Util 'looks_like_number';
 use Carp 'confess';
+use constant DEBUG => $ENV{MANDEL_CURSOR_DEBUG} ? eval 'require Data::Dumper;1' : 0;
 
 my $POINTER = Mojo::JSON::Pointer->new;
 
@@ -198,6 +199,8 @@ sub remove {
 
   ($delay, $cb) = $self->_blocking unless $cb;
 
+  warn "[$self\::remove] @{[$self->id]}\n" if DEBUG;
+
   $self->_collection->remove({ _id => $self->id }, { single => 1 }, sub {
     my($collection, $err, $doc);
     unless($err) {
@@ -237,6 +240,7 @@ sub save {
 
   $self->id; # make sure we have an ObjectID
 
+  warn "[$self\::save] ", Data::Dumper->new([$self->_raw])->Indent(1)->Sortkeys(1)->Terse(1)->Maxdepth(3)->Dump if DEBUG;
   $self->_collection->save($self->_raw, sub {
     my($collection, $err, $doc);
     unless($err) {
@@ -323,10 +327,10 @@ sub import {
     $model->collection_name($args{collection_name});
   }
 
-  monkey_patch $caller, belongs_to => sub { $model->add_relationship(belongs_to => @_) };
-  monkey_patch $caller, field => sub { $model->add_field(@_) };
-  monkey_patch $caller, has_many => sub { $model->add_relationship(has_many => @_) };
-  monkey_patch $caller, has_one => sub { $model->add_relationship(has_one => @_) };
+  monkey_patch $caller, belongs_to => sub { $model->relationship(belongs_to => @_)->monkey_patch };
+  monkey_patch $caller, field => sub { $model->field(@_) };
+  monkey_patch $caller, has_many => sub { $model->relationship(has_many => @_)->monkey_patch };
+  monkey_patch $caller, has_one => sub { $model->relationship(has_one => @_)->monkey_patch };
   monkey_patch $caller, model => sub { $model };
 
   @_ = ($class, $base_class);

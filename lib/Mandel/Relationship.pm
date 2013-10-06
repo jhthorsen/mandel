@@ -21,16 +21,40 @@ use Mojo::Loader;
 
 my $LOADER = Mojo::Loader->new;
 
-sub _load_class {
-  my $class = pop;
-  my $e = $LOADER->load($class);
-  die $e if ref $e;
-  $class;
-}
+=head1 ATTRIBUTES
 
-sub _foreign_key {
-  sprintf '_id_%s', $_[1]->model->name;
-}
+=head2 accessor
+
+Base name of accessor(s) created.
+
+=head2 foreign_field
+
+The name of the field in the foreign class which hold the "_id" back.
+
+=head2 document_class
+
+Holds the classname of the document class that holds all the accessors and
+methods created.
+
+=head2 related_class
+
+Holds the related document class name.
+
+=cut
+
+has accessor => '';
+has document_class => '';
+has foreign_field => sub { sprintf '_id_%s', shift->document_class->model->name };
+has related_class => '';
+
+# is this a bad memory leak? $model => $rel_obj => $_related_model
+# i don't think so, since the number of objects are constant
+has _related_model => sub {
+  my $self = shift;
+  my $e = $LOADER->load($self->related_class);
+  die $e if ref $e;
+  $self->related_class->model;
+};
 
 =head1 SEE ALSO
 

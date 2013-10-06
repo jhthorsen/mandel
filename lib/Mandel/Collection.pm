@@ -211,6 +211,7 @@ sub remove {
 
   ($delay, $cb) = $self->_blocking unless $cb;
 
+  warn '[Mandel::Collection::remove] ', Data::Dumper->new([$self->{query}])->Indent(1)->Sortkeys(1)->Terse(1)->Maxdepth(3)->Dump if DEBUG;
   $self->_storage_collection->remove($self->{query}, $cb);
 
   return $delay->wait if $delay;
@@ -232,6 +233,7 @@ sub save {
   $raw->{_id} ||= bson_oid;
   ($delay, $cb) = $self->_blocking unless $cb;
 
+  warn '[Mandel::Collection::save] ', Data::Dumper->new([$raw])->Indent(1)->Sortkeys(1)->Terse(1)->Maxdepth(3)->Dump if DEBUG;
   $self->_storage_collection->save($raw, sub {
     my($collection, $err, $doc) = @_;
     $self->$cb($err, $self->_new_document($raw, 1));

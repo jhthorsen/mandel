@@ -10,7 +10,7 @@ my $name = rand;
   my $cats;
 
   ok !$person->in_storage, 'person not in_storage';
-  $person->add_cat({ name => $name }, sub {
+  $person->add_cats({ name => $name }, sub {
     my($person, $err, $cat) = @_;
     ok !$err, 'no error';
     ok $cat->in_storage, 'cat in_storage';
