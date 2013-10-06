@@ -14,11 +14,11 @@ Example:
 
 Will add:
 
-  $cat = MyModel::Cat->new->add_owner(\%args, $cb);
-  $cat = MyModel::Cat->new->add_owner($person_obj, $cb);
+  $cat = MyModel::Cat->new->add_owners(\%args, $cb);
+  $cat = MyModel::Cat->new->add_owners($person_obj, $cb);
 
-  $person_obj = MyModel::Cat->new->add_owner(\%args);
-  $person_obj = MyModel::Cat->new->add_owner($person_obj);
+  $person_obj = MyModel::Cat->new->add_owners(\%args);
+  $person_obj = MyModel::Cat->new->add_owners($person_obj);
 
   $persons = MyModel::Cat->new->search_owners;
 
