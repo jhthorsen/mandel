@@ -121,27 +121,38 @@ sub _field_type {
   return $code;
 }
 
-=head2 add_relationship
+=head2 relationship
 
-  $self = $self->add_relationship(
-            $type => $field_name => 'Other::Document::Class'
-          );
+  $rel_obj = $self->relationship($type => $field_name => 'Other::Document::Class');
+  $rel_obj = $self->relationship($field_name);
 
-This method is used to describe a relationship two documents.
+This method is used to describe a relationship between two documents.
 
-See L<Mandel::Relationship::HasMany> and L<Mandel::Relationship::HasOne>.
+See L<Mandel::Relationship::BelongsTo>, L<Mandel::Relationship::HasMany> or
+L<Mandel::Relationship::HasOne>.
 
 =cut
 
-sub add_relationship {
-  my($self, $type, $field, $other) = @_;
+sub relationship {
+  my $self = shift;
+
+  if(@_ == 1) {
+    return $self->{relationship}{$_[0]};
+  }
+
+  my($type, $field, $other, %args) = @_;
   my $class = 'Mandel::Relationship::' .Mojo::Util::camelize($type);
   my $e = $LOADER->load($class);
 
   confess $e if ref $e;
-  $class->create($self->document_class, $field, $other);
-  $self->{relationship}{$field} = $class; # TODO: The value can be redefined any time
-  $self;
+
+  $self->{relationship}{$field}
+    = $class->new(
+        accessor => $field,
+        document_class => $self->document_class,
+        related_class => $other,
+        %args,
+      );
 }
 
 =head2 new_collection

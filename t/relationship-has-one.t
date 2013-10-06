@@ -8,7 +8,7 @@ my $cat = $connection->model(cat => {})->model('cat');
 
 ok !$person->document_class->can('cat'), 'person cannot cat()';
 
-is $person->add_relationship(has_one => cat => $cat->document_class), $person, 'add_relationship()';
+isa_ok $person->relationship(has_one => cat => $cat->document_class)->monkey_patch, 'Mandel::Relationship::HasOne';
 ok $person->document_class->can('cat'), 'person can cat()';
 
 done_testing;
