@@ -43,6 +43,7 @@ use Mandel::Model;
 use Mango::BSON::ObjectID;
 use Scalar::Util 'looks_like_number';
 use Carp 'confess';
+use constant DEBUG => $ENV{MANDEL_CURSOR_DEBUG} ? eval 'require Data::Dumper;1' : 0;
 
 my $POINTER = Mojo::JSON::Pointer->new;
 
@@ -198,6 +199,8 @@ sub remove {
 
   ($delay, $cb) = $self->_blocking unless $cb;
 
+  warn "[$self\::remove] @{[$self->id]}\n" if DEBUG;
+
   $self->_collection->remove({ _id => $self->id }, { single => 1 }, sub {
     my($collection, $err, $doc);
     unless($err) {
@@ -237,6 +240,7 @@ sub save {
 
   $self->id; # make sure we have an ObjectID
 
+  warn "[$self\::save] ", Data::Dumper->new([$self->_raw])->Indent(1)->Sortkeys(1)->Terse(1)->Maxdepth(3)->Dump if DEBUG;
   $self->_collection->save($self->_raw, sub {
     my($collection, $err, $doc);
     unless($err) {
