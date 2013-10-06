@@ -26,7 +26,7 @@ is $doc->str('foobar'), $doc, 'foobar is str';
 
 $doc->num("1.23");
 $doc->int("42");
-like j($doc->_raw), qr{:1\.23,}, '1.23 is a number';
-like j($doc->_raw), qr{:42,}, '42 is a number';
+like j($doc->_raw), qr{\:1\.23,}, '1.23 is a number';
+like j($doc->_raw), qr{\:42,}, '42 is a number';
 
 done_testing;
