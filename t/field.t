@@ -16,7 +16,7 @@ my $doc = MyDocument->new;
 
 is $doc->foo, undef, 'foo is undef';
 
-$doc->_raw->{bar} = 123;
+$doc->data->{bar} = 123;
 is $doc->bar, 123, 'bar is 123';
 
 is $doc->baz(42), $doc, 'baz setter return self';

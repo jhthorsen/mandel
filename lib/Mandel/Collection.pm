@@ -322,7 +322,7 @@ sub _new_document {
   my @extra;
 
   if($doc) {
-    push @extra, _raw => $doc;
+    push @extra, data => $doc;
     push @extra, dirty => { map { $_, 1 } keys %$doc };
   }
   if(my $connection = $self->{connection}) {

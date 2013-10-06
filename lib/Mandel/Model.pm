@@ -88,7 +88,7 @@ sub field {
   for my $field (@{ ref $fields eq 'ARRAY' ? $fields : [$fields] }) {
     my $code = "";
 
-    $code .= "package $class;\nsub $field {\n my \$raw = \$_[0]->_raw;\n";
+    $code .= "package $class;\nsub $field {\n my \$raw = \$_[0]->data;\n";
     $code .= "return \$raw->{'$field'} if \@_ == 1;\n";
     $code .= "local \$_ = \$_[1];\n";
     $code .= $self->_field_type($args{isa}) if $args{isa};

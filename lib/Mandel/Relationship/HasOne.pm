@@ -62,7 +62,7 @@ sub monkey_patch {
         sub {
           my($delay, @err) = @_;
           $doc->save($delay->begin);
-          $obj->_raw->{$foreign_field} = bson_dbref $related_model->name, $doc->id;
+          $obj->data->{$foreign_field} = bson_dbref $related_model->name, $doc->id;
           $obj->save($delay->begin);
         },
         sub {

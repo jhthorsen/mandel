@@ -23,14 +23,14 @@ my $document;
   $collection->model($model);
   $document = $collection->create;
   isa_ok $document, 'Mandel::Document';
-  is $document->{_raw}, undef, 'raw was not set in create()';
+  is $document->{data}, undef, 'raw was not set in create()';
   is $document->in_storage, 0, 'in_storage = 0';
   is $document->model, $model, 'model = $model';
 }
 
 {
   $document = $collection->create({ foo => 123 });
-  is_deeply $document->{_raw}, { foo => 123 }, 'raw was set in create()';
+  is_deeply $document->{data}, { foo => 123 }, 'raw was set in create()';
   is_deeply $document->dirty, { foo => 1 }, 'dirty was set from doc';
   is $document->in_storage, 0, 'in_storage = 0';
 }

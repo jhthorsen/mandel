@@ -66,7 +66,7 @@ sub monkey_patch {
         sub {
           my($delay) = @_;
           $obj->save($delay->begin);
-          $doc->_raw->{$foreign_field} = bson_dbref $related_model->name, $obj->id;
+          $doc->data->{$foreign_field} = bson_dbref $related_model->name, $obj->id;
           $doc->save($delay->begin);
         },
         sub {
@@ -78,7 +78,7 @@ sub monkey_patch {
     else { # get =============================================================
       $related_model
         ->new_collection($doc->connection)
-        ->search({ _id => $doc->_raw->{$foreign_field}{'$id'} })
+        ->search({ _id => $doc->data->{$foreign_field}{'$id'} })
         ->single(sub { $doc->$cb(@_[1, 2]) });
     }
 

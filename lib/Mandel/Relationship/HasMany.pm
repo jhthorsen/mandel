@@ -96,7 +96,7 @@ sub _monkey_patch_add_method {
     Mojo::IOLoop->delay(
       sub {
         my($delay) = @_;
-        $obj->_raw->{$foreign_field} = bson_dbref $related_model->name, $doc->id;
+        $obj->data->{$foreign_field} = bson_dbref $related_model->name, $doc->id;
         $obj->save($delay->begin);
         $doc->save($delay->begin);
       },

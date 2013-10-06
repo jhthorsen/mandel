@@ -8,7 +8,7 @@ my $doc = Mandel::Document->new;
 {
   is $doc->set('/person/2/bruce', { age => 42 }), $doc, 'set /person/2/bruce';
   is_deeply(
-    $doc->_raw,
+    $doc->data,
     {
       person => [
         undef,
@@ -20,7 +20,7 @@ my $doc = Mandel::Document->new;
         },
       ],
     },
-    '_raw is updated',
+    'data is updated',
   );
 
   eval { $doc->set('/person/foo', 'whatever') };

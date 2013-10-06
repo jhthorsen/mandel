@@ -2,6 +2,7 @@ Revision history for Mandel
 
 0.07
        * Rename Model::add_field() to just field()
+       * Rename Document::_raw() to ::data()
        * Relationships are now objects
        * Change related documents are stored using a dbref
 
