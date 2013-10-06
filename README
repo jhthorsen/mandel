@@ -129,12 +129,18 @@ METHODS
     "model()" method defined.
 
   initialize
-      $self->initialize(@names);
-      $self->initialize;
+      $self->initialize(@names, \%args);
+      $self->initialize(\%args);
 
     Takes a list of document names. Calls the "initialize" in
     Mango::Document method on any document given as input. @names default to
     "all_document_names" unless specified.
+
+    %args defaults to empty hash ref, unless specified as input.
+
+    The "initialize()" method will be called like this:
+
+      $document_class->initialize($self, \%args);
 
   import
     See "SYNOPSIS".
