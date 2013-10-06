@@ -142,11 +142,11 @@ sub new {
 
 =head2 initialize
 
-A no-op placeholder useful for initialization (see L<Mandel/initialize>)
+A no-op placeholder useful for initialization. See L<Mandel/initialize>.
 
 =cut
 
-sub initialize {}
+sub initialize { shift }
 
 =head2 contains
 

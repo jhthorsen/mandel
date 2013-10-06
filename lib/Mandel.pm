@@ -253,23 +253,29 @@ sub model {
 
 =head2 initialize
 
-  $self->initialize(@names);
-  $self->initialize;
+  $self->initialize(@names, \%args);
+  $self->initialize(\%args);
 
 Takes a list of document names. Calls the L<Mango::Document/initialize> method
 on any document given as input. C<@names> default to L</all_document_names>
 unless specified.
 
+C<%args> defaults to empty hash ref, unless specified as input.
+
+The C<initialize()> method will be called like this:
+
+  $document_class->initialize($self, \%args);
+
 =cut
 
 sub initialize {
+  my $args = ref $_[-1] eq 'HASH' ? pop : {};
   my $self = shift;
   my @documents = @_ ? @_ : $self->all_document_names;
 
   for my $document ( @documents ) {
     my $class = $self->class_for($document);
-    my $collection = $self->_storage_collection($class->collection);
-    $class->initialize($self, $collection);
+    $class->initialize($self, $args);
   }
 }
 
