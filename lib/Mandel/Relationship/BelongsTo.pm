@@ -19,6 +19,7 @@ Will add:
 
   $person_obj = MyModel::Cat->new->owner(\%args);
   $person_obj = MyModel::Cat->new->owner($person_obj);
+  $cat = MyModel::Cat->new->owner($bson_oid);
 
   $person = MyModel::Cat->new->owner;
   $self = MyModel::Cat->new->owner(sub { my($self, $err, $person) = @_; });
@@ -58,6 +59,10 @@ sub monkey_patch {
     my $related_model = $self->_related_model;
 
     if($obj) { # set ===========================================================
+      if(UNIVERSAL::isa($obj, 'Mango::BSON::ObjectID')) {
+        $doc->data->{$foreign_field} = bson_dbref $related_model->name, $obj;
+        return $doc;
+      }
       if(ref $obj eq 'HASH') {
         $obj = $related_model->new_collection($doc->connection)->create($obj);
       }

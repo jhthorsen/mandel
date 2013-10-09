@@ -4,6 +4,10 @@ package Mandel;
 
 Mandel - Async model layer for MongoDB objects using Mango
 
+=head1 VERSION
+
+0.07
+
 =head1 SYNOPSIS
 
   package MyModel;

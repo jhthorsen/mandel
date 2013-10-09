@@ -1,0 +1,22 @@
+use Mojo::Base -strict;
+use Mandel ();
+use Mango::BSON ':bson';
+use Test::More;
+
+my $connection = Mandel->new;
+my $cat = $connection->model(cat => {})->model('cat');
+my $person = $connection->model(person => {})->model('person');
+
+isa_ok $cat->relationship(belongs_to => person => $person->document_class)->monkey_patch, 'Mandel::Relationship::BelongsTo';
+
+my $doc = $cat->document_class->new({});
+my $oid = bson_oid;
+
+is $doc->person($oid), $doc, 'belongs_to with oid returns self';
+is_deeply(
+  $doc->data->{person},
+  { '$ref' => 'person', '$id' => $oid },
+  'data.person == oid'
+);
+
+done_testing;

@@ -1,5 +1,9 @@
 Revision history for Mandel
 
+0.08
+       * Add support for setting belongs_to accessor to oid
+       * Fix Model->name() was not set when built from documents on disk
+
 0.07     Sun Oct  6 14:46:55 2013
        * Rename Model::add_field() to just field()
        * Rename Document::_raw() to ::data()
