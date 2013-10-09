@@ -247,11 +247,8 @@ sub model {
     $self->{model}{$name} = $model;
     return $self;
   }
-  elsif($model = $self->{model}{$name}) {
-    return $model;
-  }
   else {
-    return $self->class_for($name)->model;
+    return $self->{model}{$name} ||= $self->class_for($name)->model;
   }
 }
 

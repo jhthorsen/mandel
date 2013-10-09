@@ -317,18 +317,17 @@ See L</SYNOPSIS>.
 
 sub import {
   my $class = shift;
-  my %args = @_ == 1 ? (collection_name => shift, @_) : @_;
+  my %args = @_ == 1 ? (name => shift) : @_;
   my $caller = caller;
   my $model = Mandel::Model->new(document_class => $caller, %args);
   my $base_class = 'Mandel::Document';
 
-  if($args{collection_name} and $args{collection_name} =~ /::/) {
-    $base_class = delete $args{collection_name};
+  if($args{name} and $args{name} =~ /::/) {
+    $base_class = delete $args{name};
   }
-  if(!$args{collection_name}) {
-    $args{collection_name} = Mojo::Util::decamelize(($caller =~ /(\w+)$/)[0]);
-    $args{collection_name} .= 's' unless $args{collection_name} =~ /s$/;
-    $model->collection_name($args{collection_name});
+  if(!$args{name}) {
+    $args{name} = Mojo::Util::decamelize(($caller =~ /(\w+)$/)[0]);
+    $model->name($args{name});
   }
 
   monkey_patch $caller, belongs_to => sub { $model->relationship(belongs_to => @_)->monkey_patch };

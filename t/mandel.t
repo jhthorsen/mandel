@@ -36,4 +36,14 @@ use MyModel;
   is Mandel::Document->initialize, 'Mandel::Document', 'default initialize method';
 }
 
+{
+  my $connection = MyModel->new;
+  my $menu = $connection->model('menu');
+
+  is $menu->name, 'menu', 'menu name';
+  is $menu->collection_name, 'menus', 'menu collection_name';
+  is $menu->collection_class, 'Mandel::Collection', 'menu collection_class';
+  is $menu->document_class, 'MyModel::Menu', 'menu document_class';
+}
+
 done_testing;
