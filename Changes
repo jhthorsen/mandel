@@ -1,6 +1,6 @@
 Revision history for Mandel
 
-0.08
+0.08     Wed Oct  9 21:44:53 2013
        * Add support for setting belongs_to accessor to oid
        * Fix Model->name() was not set when built from documents on disk
 
