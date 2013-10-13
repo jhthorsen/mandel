@@ -1,6 +1,6 @@
 Revision history for Mandel
 
-0.09
+0.09     Sun Oct 13 18:29:40 2013
        * Improved blocking support
        * Fix Document->remove() and ->save(): Forgot to pass on $err
 

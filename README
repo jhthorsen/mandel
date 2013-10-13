@@ -2,7 +2,7 @@ NAME
     Mandel - Async model layer for MongoDB objects using Mango
 
 VERSION
-    0.08
+    0.09
 
 SYNOPSIS
       package MyModel;
@@ -33,7 +33,7 @@ SYNOPSIS
       });
 
       $persons->count(sub {
-        my($persons, $n_persons) = @_;
+        my($persons, $err, $n_persons) = @_;
       });
 
       $persons->all(sub {
