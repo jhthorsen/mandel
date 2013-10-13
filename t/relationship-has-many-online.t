@@ -25,7 +25,7 @@ my $name = rand;
   is_deeply $cats->{extra}, { limit => 10 }, 'got correct cat extra';
 
   $cats->count(sub {
-    my($person, $n) = @_;
+    my($person, $err, $n) = @_;
     is $n, 1, 'one cat in storage';
     Mojo::IOLoop->stop;
   });

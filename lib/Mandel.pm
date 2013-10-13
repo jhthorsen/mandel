@@ -38,7 +38,7 @@ Mandel - Async model layer for MongoDB objects using Mango
   });
 
   $persons->count(sub {
-    my($persons, $n_persons) = @_;
+    my($persons, $err, $n_persons) = @_;
   });
 
   $persons->all(sub {

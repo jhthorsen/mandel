@@ -28,7 +28,7 @@ my $name = rand;
   Mojo::IOLoop->start;
 
   $connection->collection('person')->count(sub {
-    my($cats, $n) = @_;
+    my($cats, $err, $n) = @_;
     is $n, 2, 'two persons in the database';
     Mojo::IOLoop->stop;
   });

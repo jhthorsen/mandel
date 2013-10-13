@@ -41,7 +41,7 @@ $connection->storage->db->command(dropDatabase => 1);
   Mojo::IOLoop->start;
 
   $connection->collection('person')->count(sub {
-    my($persons, $n) = @_;
+    my($persons, $err, $n) = @_;
     is $n, 2, 'two persons in the database';
     Mojo::IOLoop->stop;
   });

@@ -42,7 +42,7 @@ $connection->storage->db->command(dropDatabase => 1);
 
 {
   $persons->count(sub {
-    my($persons, $n_persons) = @_;
+    my($persons, $err, $n_persons) = @_;
     isa_ok $persons, 'Mandel::Collection';
     is $n_persons, 1, 'count persons';
     Mojo::IOLoop->stop;

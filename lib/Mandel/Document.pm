@@ -191,6 +191,7 @@ sub is_changed {
 =head2 remove
 
   $self = $self->remove(sub { my($self, $err) = @_; });
+  $self = $self->remove;
 
 Will remove this object from the L</collection> and set mark
 all fields as L</dirty>.
@@ -199,28 +200,37 @@ all fields as L</dirty>.
 
 sub remove {
   my($self, $cb) = @_;
-  my $delay;
 
-  ($delay, $cb) = $self->_blocking unless $cb;
+  my $c = $self->_collection;
+  my @args = ( { _id => $self->id }, { single => 1 } );
 
   warn "[$self\::remove] @{[$self->id]}\n" if DEBUG;
 
-  $self->_collection->remove({ _id => $self->id }, { single => 1 }, sub {
-    my($collection, $err, $doc);
-    unless($err) {
-      $self->dirty->{$_} = 1 for keys %{ $self->data };
-      $self->in_storage(0);
-    }
-    $self->$cb($err);
-  });
+  if ($cb) {
+    $c->remove( @args, sub {
+      my($collection, $err, $doc);
+      $self->_mark_removed_dirty unless $err;
+      $self->$cb($err);
+    });
+  }
+  else {
+    $c->remove( @args );
+    $self->_mark_removed_dirty;
+  }
 
-  return $delay->wait if $delay;
   return $self;
+}
+
+sub _mark_removed_dirty {
+  my $self = shift;
+  $self->dirty->{$_} = 1 for keys %{ $self->data };
+  $self->in_storage(0);
 }
 
 =head2 save
 
   $self = $self->save(sub { my($self, $err) = @_; });
+  $self = $self->save;
 
 This method stores the raw data in the database and collection. It clear
 the L</dirty> attribute.
@@ -232,30 +242,35 @@ immediately unless L</is_changed> is true and L</in_storage> is false.
 
 sub save {
   my($self, $cb) = @_;
-  my $delay;
-
-  ($delay, $cb) = $self->_blocking unless $cb;
 
   if(!$self->is_changed and $self->in_storage) {
-    $self->$cb('');
-    return $delay->wait if $delay;
+    $self->$cb('') if $cb;
     return $self;
   }
 
   $self->id; # make sure we have an ObjectID
 
   warn "[$self\::save] ", Data::Dumper->new([$self->data])->Indent(1)->Sortkeys(1)->Terse(1)->Maxdepth(3)->Dump if DEBUG;
-  $self->_collection->save($self->data, sub {
-    my($collection, $err, $doc);
-    unless($err) {
-      delete $self->{dirty};
-      $self->in_storage(1);
-    }
-    $self->$cb($err);
-  });
+  my $c = $self->_collection;
 
-  return $delay->wait if $delay;
+  if ($cb) {
+    $c->save($self->data, sub {
+      my($collection, $err, $doc);
+      $self->_mark_stored_clean unless $err;
+      $self->$cb($err);
+    });
+  } else {
+    $c->save($self->data);
+    $self->_mark_stored_clean;
+  }
+
   return $self;
+}
+
+sub _mark_stored_clean {
+  my $self = shift;
+  delete $self->{dirty};
+  $self->in_storage(1);
 }
 
 =head2 set
@@ -338,20 +353,6 @@ sub import {
 
   @_ = ($class, $base_class);
   goto &Mojo::Base::import;
-}
-
-sub _blocking {
-  my $self = shift;
-  my $delay = Mojo::IOLoop->delay;
-  my $cb = $delay->begin(0);
-
-  return(
-    $delay,
-    sub {
-      die $_[1] if $_[1]; # err
-      $cb->($self);
-    },
-  );
 }
 
 =head1 SEE ALSO

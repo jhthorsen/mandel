@@ -53,6 +53,7 @@ has _storage_collection => sub {
 =head2 all
 
   $self = $self->all(sub { my($self, $err, $docs) = @_; });
+  $docs = $self->all;
 
 Retrieves all documents from the database that match the given L</search>
 query.
@@ -61,17 +62,15 @@ query.
 
 sub all {
   my($self, $cb) = @_;
-  my $delay;
 
-  ($delay, $cb) = $self->_blocking unless $cb;
 
-  $self->_new_cursor->all(sub {
+  my $c = $self->_new_cursor;
+  return [ map { $self->_new_document($_, 1) } @{ $c->all } ] unless $cb;
+
+  $c->all(sub {
     my($cursor, $err, $docs) = @_;
-    return $self->$cb($err, []) if $err;
     return $self->$cb($err, [ map { $self->_new_document($_, 1) } @$docs ]);
   });
-
-  return $delay->wait if $delay;
   return $self;
 }
 
@@ -98,6 +97,7 @@ sub create {
 =head2 count
 
   $self = $self->count(sub { my($self, $err, $int) = @_; });
+  $int  = $self->count;
 
 Used to count how many documents the current L</search> query match.
 
@@ -105,22 +105,18 @@ Used to count how many documents the current L</search> query match.
 
 sub count {
   my($self, $cb) = @_;
-  my $delay;
 
-  ($delay, $cb) = $self->_blocking unless $cb;
-  $self->_new_cursor->count(sub { $self->$cb($_[2]) });
+  my $c = $self->_new_cursor;
+  return $c->count unless $cb;
 
-  if($delay) {
-    $delay->begin->(''); # hack _blocking() callback
-    return $delay->wait;
-  }
-
+  $c->count( sub{shift; $self->$cb(@_)} );
   return $self;
 }
 
 =head2 distinct
 
-  $self = $self->distinct("field_name", sub { my($self, $err, $value) = @_; });
+  $self   = $self->distinct("field_name", sub { my($self, $err, $values) = @_; });
+  $values = $self->distinct("field_name");
 
 Get all distinct values for key in this collection.
 
@@ -128,16 +124,11 @@ Get all distinct values for key in this collection.
 
 sub distinct {
   my($self, $field, $cb) = @_;
-  my $delay;
 
-  ($delay, $cb) = $self->_blocking unless $cb;
+  my $c = $self->_new_cursor;
+  return $c->distinct($field) unless $cb;
 
-  $self->_new_cursor->distinct($field, sub {
-    my($cursor, $err, $values) = @_;
-    $self->$cb($err, $values);
-  });
-
-  return $delay->wait if $delay;
+  $c->distinct( sub{shift; $self->$cb(@_)} );
   return $self;
 }
 
@@ -160,13 +151,13 @@ sub iterator {
 
 =head2 patch
 
-  $self = $sef->patch(\%document, sub { my($self, $err) = @_ });
-  $self = $sef->patch($document, sub { my($self, $err) = @_ });
+  $self = $self->patch(\%changes, sub { my($self, $err, $doc) = @_ });
+  $self = $self->patch(\%changes);
 
 Used to save of a partial document. This method require
 L<_id|Mandel::Document/id> to be set in the document to save.
 
-L</patch> use L<Mandel::Collection/update> with the mongodb C<$set>
+L</patch> uses L<Mandel::Collection/update> with the mongodb C<$set>
 operator under the hood.
 
 =cut
@@ -174,31 +165,30 @@ operator under the hood.
 sub patch {
   my($self, $patch, $cb) = @_;
   my $id = ref $patch eq 'HASH' ?  delete $patch->{_id} : $patch->id;
-  my $delay;
-
-  ($delay, $cb) = $self->_blocking unless $cb;
 
   unless($id) {
-    $self->$cb('_id is required in input $patch');
+    my $err = '_id is required in input $patch';
+    die $err unless $cb;
+    $self->$cb($err);
     return $self;
   }
 
-  $self->_storage_collection->update(
+  my $c = $self->_storage_collection;
+  my @args = (
     { _id => ref $id ? $id : bson_oid $id },
     { '$set' => $patch },
-    sub {
-      my($collection, $err, $doc) = @_;
-      $self->$cb($err);
-    },
   );
 
-  return $delay->wait if $delay;
+  push @args, sub { $self->$cb($_[1]) } if $cb;
+  $c->update(@args);
+
   return $self;
 }
 
 =head2 remove
 
-  $self = $self->remove(sub { my($self, $err, $doc) = @_; });
+  $self = $self->remove(sub { my($self, $err) = @_; });
+  $self = $self->remove;
 
 Remove the documents that query given to L</search>.
 
@@ -207,20 +197,20 @@ Remove the documents that query given to L</search>.
 sub remove {
   my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
   my $self = shift;
-  my $delay;
-
-  ($delay, $cb) = $self->_blocking unless $cb;
+  my $c = $self->_storage_collection;
+  my @args = $self->{query};
 
   warn '[Mandel::Collection::remove] ', Data::Dumper->new([$self->{query}])->Indent(1)->Sortkeys(1)->Terse(1)->Maxdepth(3)->Dump if DEBUG;
-  $self->_storage_collection->remove($self->{query}, $cb);
+  push @args, sub{shift; $self->$cb($_[1])} if $cb;
 
-  return $delay->wait if $delay;
-  return $self;
+  $c->remove(@args);
+  $self;
 }
 
 =head2 save
 
-  $self = $self->save(\%document, sub { my($self, $err, $obj) = @_; );
+  $self = $self->save(\%document, sub { my($self, $err, $doc) = @_; );
+  $doc  = $self->save(\%document);
 
 Used to save a document. The callback receives a L<Mandel::Document>.
 
@@ -228,18 +218,22 @@ Used to save a document. The callback receives a L<Mandel::Document>.
 
 sub save {
   my($self, $raw, $cb) = @_;
-  my $delay;
+  my $c = $self->_storage_collection;
 
   $raw->{_id} ||= bson_oid;
-  ($delay, $cb) = $self->_blocking unless $cb;
 
   warn '[Mandel::Collection::save] ', Data::Dumper->new([$raw])->Indent(1)->Sortkeys(1)->Terse(1)->Maxdepth(3)->Dump if DEBUG;
-  $self->_storage_collection->save($raw, sub {
+
+  unless ($cb) {
+    $c->save($raw);
+    return $self->_new_document($raw, 1);
+  }
+
+  $c->save($raw, sub {
     my($collection, $err, $doc) = @_;
     $self->$cb($err, $self->_new_document($raw, 1));
   });
 
-  return $delay->wait if $delay;
   return $self;
 }
 
@@ -261,14 +255,15 @@ sub search {
   my $class = blessed $self;
   my $clone = $class->new(%$self);
 
-  $clone->{extra}{$_} = $extra->{$_} for keys %{ $extra || {} };
-  $clone->{query}{$_} = $query->{$_} for keys %{ $query || {} };
+  @{ $clone->{extra} }{keys %$extra} = values %$extra if $extra;
+  @{ $clone->{query} }{keys %$query} = values %$query if $query;
   $clone;
 }
 
 =head2 single
 
-  $self = $self->single(sub { my($self, $err, $obj) = @_; });
+  $self = $self->single(sub { my($self, $err, $doc) = @_; });
+  $doc  = $self->single;
 
 Will return the first object found in the callback, matching the given
 C<%search> query.
@@ -277,32 +272,18 @@ C<%search> query.
 
 sub single {
   my($self, $cb) = @_;
-  my $delay;
 
-  ($delay, $cb) = $self->_blocking unless $cb;
+  my $c = $self->_new_cursor->limit(-1);
+  unless ($cb) {
+    my $doc = $c->next or return;
+    return $self->_new_document($doc, 1);
+  }
 
-  $self->_new_cursor->limit(-1)->next(sub {
+  $c->next(sub {
     my($cursor, $err, $doc) = @_;
     $self->$cb($err, $doc ? $self->_new_document($doc, 1) : undef);
   });
-
-  return $delay->wait if $delay;
   return $self;
-}
-
-sub _blocking {
-  my $self = @_;
-  my $delay = Mojo::IOLoop->delay;
-  my $cb = $delay->begin(0);
-
-  return(
-    $delay,
-    sub {
-      die $_[1] if @_ == 3 and $_[1]; # err
-      $cb->($_[2]) if @_ == 3;
-      $cb->($_[1]);
-    },
-  )
 }
 
 sub _new_cursor {
