@@ -208,7 +208,7 @@ sub remove {
 
   if ($cb) {
     $c->remove( @args, sub {
-      my($collection, $err, $doc);
+      my($collection, $err, $doc) = @_;
       $self->_mark_removed_dirty unless $err;
       $self->$cb($err);
     });
@@ -255,7 +255,7 @@ sub save {
 
   if ($cb) {
     $c->save($self->data, sub {
-      my($collection, $err, $doc);
+      my($collection, $err, $doc) = @_;
       $self->_mark_stored_clean unless $err;
       $self->$cb($err);
     });
