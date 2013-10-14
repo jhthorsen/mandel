@@ -40,7 +40,7 @@ use Mojo::Base 'Mojo::Base';
 use Mojo::JSON::Pointer;
 use Mojo::Util qw( monkey_patch );
 use Mandel::Model;
-use Mango::BSON::ObjectID;
+use Mango::BSON ':bson';
 use Scalar::Util 'looks_like_number';
 use Carp 'confess';
 use constant DEBUG => $ENV{MANDEL_CURSOR_DEBUG} ? eval 'require Data::Dumper;1' : 0;
@@ -71,7 +71,7 @@ sub id {
 
   if(@_) {
     $self->dirty->{_id} = 1;
-    $raw->{_id} = ref $_[0] ? $_[0] : Mango::BSON::ObjectID->new($_[0]);
+    $raw->{_id} = ref $_[0] ? $_[0] : bson_oid $_[0];
     return $self;
   }
   elsif($raw->{_id}) {
@@ -79,7 +79,7 @@ sub id {
   }
   else {
     $self->dirty->{_id} = 1;
-    return $raw->{_id} = Mango::BSON::ObjectID->new;
+    return $raw->{_id} = bson_oid;
   }
 }
 
@@ -116,7 +116,7 @@ has model => sub { confess "model required in constructor" };
 has dirty => sub { +{} };
 has in_storage => 0;
 
-has _collection => sub {
+has _storage_collection => sub {
   my $self = shift;
   $self->connection->_storage_collection($self->model->collection_name);
 };
@@ -188,6 +188,44 @@ sub is_changed {
   return 1;
 }
 
+=head2 patch
+
+  $self = $self->patch(\%changes, sub { my($self, $err) = @_ });
+  $self = $self->patch(\%changes);
+
+This method will insert/update a partial document. This is useful if C</data>
+does not contain a complete document.
+
+It will also insert the document if a document with L</id> does not already
+exist.
+
+=cut
+
+sub patch {
+  my($self, $changes, $cb) = @_;
+  my $data = $self->data;
+
+  if($changes) {
+    @$data{keys %$changes} = values %$changes;
+  }
+
+  $data = { %$data };
+  delete $data->{_id}; # Mod on _id not allowed
+
+  $self->_storage_collection->update(
+    { _id => $self->id },
+    { '$set' => $data },
+    { upsert => bson_true },
+    $cb ? (sub {
+      $self->_mark_stored_clean unless $_[1];
+      $self->$cb($_[1]);
+    }) : (),
+  );
+
+  $self->_mark_stored_clean unless $cb;
+  $self;
+}
+
 =head2 remove
 
   $self = $self->remove(sub { my($self, $err) = @_; });
@@ -200,8 +238,7 @@ all fields as L</dirty>.
 
 sub remove {
   my($self, $cb) = @_;
-
-  my $c = $self->_collection;
+  my $c = $self->_storage_collection;
   my @args = ( { _id => $self->id }, { single => 1 } );
 
   warn "[$self\::remove] @{[$self->id]}\n" if DEBUG;
@@ -251,7 +288,7 @@ sub save {
   $self->id; # make sure we have an ObjectID
 
   warn "[$self\::save] ", Data::Dumper->new([$self->data])->Indent(1)->Sortkeys(1)->Terse(1)->Maxdepth(3)->Dump if DEBUG;
-  my $c = $self->_collection;
+  my $c = $self->_storage_collection;
 
   if ($cb) {
     $c->save($self->data, sub {

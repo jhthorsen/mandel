@@ -1,5 +1,9 @@
 Revision history for Mandel
 
+0.10     Mon Oct 14 20:20:10 2013
+       * Change Mandel::Collection::patch() works on search() arguments
+       * Add Mandel::Document->patch for updating partial documents
+
 0.09     Sun Oct 13 18:29:40 2013
        * Improved blocking support
        * Fix Document->remove() and ->save(): Forgot to pass on $err

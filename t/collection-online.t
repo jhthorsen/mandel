@@ -1,7 +1,7 @@
 use t::Online;
 use Test::More;
 
-plan tests => 8;
+plan tests => 12;
 
 my $connection = t::Online->mandel;
 my $collection = $connection->collection('person');
@@ -21,9 +21,10 @@ my($id, $iterator);
 }
 
 {
-  $collection->patch({ _id => $id, age => 25 }, sub {
+  $collection->search({ _id => $id })->patch({ age => 25 }, sub {
     my($col, $err) = @_;
-    is $col, $collection, 'got collection';
+    isa_ok $col, 'Mandel::Collection';
+    isnt $col, $collection, 'but not the same collection';
     ok !$err, 'next: no error';
     Mojo::IOLoop->stop;
   });
@@ -33,7 +34,14 @@ my($id, $iterator);
     my($col, $err, $doc) = @_;
     is $doc->name, 'Bruce', 'saved name';
     is $doc->age, 25, 'patched age';
-    Mojo::IOLoop->stop;
+
+    $doc->patch({ age => 42 }, sub {
+      my($doc, $err) = @_;
+      ok !$err, 'update was successful';
+      is $doc->age, 42, 'patched age in document';
+      is $doc->is_changed, 0, 'nothing is marked as changed';
+      Mojo::IOLoop->stop;
+    });
   });
   Mojo::IOLoop->start;
 }

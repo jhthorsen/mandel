@@ -2,7 +2,7 @@ NAME
     Mandel - Async model layer for MongoDB objects using Mango
 
 VERSION
-    0.09
+    0.10
 
 SYNOPSIS
       package MyModel;

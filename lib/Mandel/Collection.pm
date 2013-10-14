@@ -154,35 +154,40 @@ sub iterator {
   $self = $self->patch(\%changes, sub { my($self, $err, $doc) = @_ });
   $self = $self->patch(\%changes);
 
-Used to save of a partial document. This method require
-L<_id|Mandel::Document/id> to be set in the document to save.
+This method can be used to add C<%changes> to multiple documents
+in the collection. Which documents to update will be decided by the
+C<%query> given to L</search>.
 
-L</patch> uses L<Mandel::Collection/update> with the mongodb C<$set>
-operator under the hood.
+C<%extra> arguments default to:
+
+=over 4
+
+=item * upsert: false
+
+=item * multi: true
+
+=back
 
 =cut
 
 sub patch {
-  my($self, $patch, $cb) = @_;
-  my $id = ref $patch eq 'HASH' ?  delete $patch->{_id} : $patch->id;
+  my($self, $changes, $cb) = @_;
+  my $extra = $self->{extra};
 
-  unless($id) {
-    my $err = '_id is required in input $patch';
-    die $err unless $cb;
-    $self->$cb($err);
-    return $self;
-  }
-
-  my $c = $self->_storage_collection;
-  my @args = (
-    { _id => ref $id ? $id : bson_oid $id },
-    { '$set' => $patch },
+  warn '[Mandel::Collection::patch] ', Data::Dumper->new([$changes, $self->{query}, $extra])->Indent(1)->Sortkeys(1)->Terse(1)->Maxdepth(3)->Dump if DEBUG;
+  $self->_storage_collection->update(
+    $self->{query} || {},
+    {
+      '$set' => $changes
+    },
+    {
+      upsert => $extra->{upsert} // bson_false,
+      multi => $extra->{multi} // bson_true,
+    },
+    $cb ? (sub { $self->$cb($_[1]) }) : (),
   );
 
-  push @args, sub { $self->$cb($_[1]) } if $cb;
-  $c->update(@args);
-
-  return $self;
+  $self;
 }
 
 =head2 remove
