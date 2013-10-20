@@ -118,7 +118,7 @@ has in_storage => 0;
 
 has _storage_collection => sub {
   my $self = shift;
-  $self->connection->_storage_collection($self->model->collection_name);
+  $self->connection->storage->collection($self->model->collection_name);
 };
 
 has data => sub { +{} }; # raw mongodb document data

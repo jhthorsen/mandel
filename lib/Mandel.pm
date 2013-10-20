@@ -2,7 +2,7 @@ package Mandel;
 
 =head1 NAME
 
-Mandel - Async model layer for MongoDB objects using Mango
+Mandel - Async model layer for MongoDB and Redis
 
 =head1 VERSION
 
@@ -94,7 +94,6 @@ use Mojo::Loader;
 use Mojo::Util;
 use Mandel::Collection;
 use Mandel::Model;
-use Mango;
 use Carp 'confess';
 
 our $VERSION = '0.10';
@@ -117,8 +116,8 @@ Returns L<Mandel::Model>.
 
 =head2 storage
 
-An instance of L<Mango> which acts as the database connection. If not
-provided.
+An instance of L<Mandel::Storage> which acts as the database connection. If
+not provided.
 
 =cut
 
@@ -128,7 +127,7 @@ has storage => sub { shift->_build_storage };
 
 sub _build_model_class { 'Mandel::Model' }
 sub _build_namespaces { [ ref $_[0] ] }
-sub _build_storage { Mango->new('mongodb://localhost/mandeltest') }
+sub _build_storage { shift->_storage(Mango => 'mongodb://localhost/mandeltest') }
 
 =head1 METHODS
 
@@ -137,11 +136,12 @@ new ones.
 
 =head2 connect
 
-  $self = $class->connect(@connect_args);
+  $self = $class->connect("mongodb://...", @connect_args);
+  $self = $class->connect("redis://...", @connect_args);
   $clone = $self->connect(@connect_args);
 
-C<@connect_args> will be passed on to L<Mango/new>, which again will be set
-as L</storage>.
+The URL and C<@connect_args> will be passed on to one of the sub classes in the
+L<Mandel::Storage> namespace. This object will again be used as L</storage>.
 
 Calling this on an object will return a clone, but with a fresh L</storage>
 object.
@@ -149,8 +149,9 @@ object.
 =cut
 
 sub connect {
-  my($self, @args) = @_;
-  my $storage = Mango->new(@args);
+  my($self, $url, @args) = @_;
+  my $backend = ($url and $url =~ /^redis/) ? 'Redis' : 'Mango';
+  my $storage = $self->_storage($backend => $url, @args);
 
   if(my $class = ref $self) {
     $self = $class->new(%$self, storage => $storage);
@@ -215,7 +216,7 @@ sub class_for {
 
   $collection_obj = $self->collection($name);
 
-Returns a L<Mango::Collection> object.
+Returns a L<Mandel::Collection> object.
 
 =cut
 
@@ -257,7 +258,7 @@ sub model {
   $self->initialize(@names, \%args);
   $self->initialize(\%args);
 
-Takes a list of document names. Calls the L<Mango::Document/initialize> method
+Takes a list of document names. Calls the L<Mandel/initialize> method
 on any document given as input. C<@names> default to L</all_document_names>
 unless specified.
 
@@ -294,13 +295,18 @@ sub import {
   goto &Mojo::Base::import;
 }
 
-sub _storage_collection {
-  $_[0]->storage->db->collection($_[1]);
+sub _storage {
+  my($self, $moniker, @args) = @_;
+  my $class = "Mandel::Storage::$moniker";
+  my $e = $LOADER->load($class);
+
+  die $e if ref $e;
+  $class->new(@args);
 }
 
 =head1 SEE ALSO
 
-L<Mojolicious>, L<Mango>
+L<Mojolicious>, L<Mango>, L<Mojo::Redis>.
 
 =head1 SOURCE REPOSITORY
 
