@@ -17,20 +17,22 @@ L<Redis|http://redis.io> using L<Mojo::Redis>.
 =cut
 
 use Mojo::Base -base;
-
-=head1 ATTRIBUTES
-
-=head2 url
-
-=cut
-
-has url => 'redis://localhost:6379';
+use Mandel::Storage::Redis::Collection;
+# use Mandel::Storage::Redis::Cursor;
 
 =head1 METHODS
 
-=head2 yyy
+=head2 collection
+
+  $obj = $self->collection($name);
 
 =cut
+
+sub collection {
+  my($self, $name) = @_;
+
+  $self->{collection}{$name} ||= Mandel::Storage::Redis::Collection->new(name => $name, storage => $self);
+}
 
 =head1 COPYRIGHT
 

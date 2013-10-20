@@ -6,8 +6,18 @@ use Test::More;
 use Mandel ();
 
 sub mandel {
-  my $db = "mandel_test_$0"; $db =~ s/\W/_/g;
-  my $connection = Mandel->connect("mongodb://localhost/$db");
+  my $db = "mandel_test_$0";
+  $db =~ s/\W/_/g;
+  shift->_connection("mongodb://localhost/$db");
+}
+
+sub redis {
+  shift->_connection("redis//localhost/14");
+}
+
+sub _connection {
+  my $self = shift;
+  my $connection = Mandel->connect(shift);
   my $person = $connection->model(person => {})->model('person');
   my $cat = $connection->model(cat => {})->model('cat');
 
