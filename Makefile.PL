@@ -17,7 +17,7 @@ WriteMakefile(
     resources => {
       license => 'http://dev.perl.org/licenses/',
       homepage => 'https://metacpan.org/release/Mandel',
-      bugtracker => 'http://rt.cpan.org/NoAuth/Bugs.html?Dist=Mandel',
+      bugtracker => 'https://github.com/jhthorsen/mandel/issues',
       repository => 'https://github.com/jhthorsen/mandel',
     },
   },
