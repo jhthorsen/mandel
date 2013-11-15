@@ -86,6 +86,7 @@ sub field {
 
   # Compile fieldibutes
   for my $field (@{ ref $fields eq 'ARRAY' ? $fields : [$fields] }) {
+    $self->{fields}{$field} = {isa=>$args{isa}||undef};
     my $code = "";
 
     $code .= "package $class;\nsub $field {\n my \$raw = \$_[0]->data;\n";
@@ -95,7 +96,6 @@ sub field {
     $code .= "\$_[0]->{dirty}{$field} = 1;";
     $code .= "\$raw->{'$field'} = \$_;\n";
     $code .= "return \$_[0];\n}";
-
     # We compile custom attribute code for speed
     no strict 'refs';
     warn "-- Attribute $field in $class\n$code\n\n" if $ENV{MOJO_BASE_DEBUG};
@@ -103,6 +103,17 @@ sub field {
   }
 
   $self;
+}
+
+sub fields {
+  my @f = keys %{$_[0]->{fields}};
+  \@f;
+}
+
+sub field_type {
+  ref $_[0]->{fields}->{$_[1]}{isa} 
+  ? $_[0]->{fields}->{$_[1]}{isa}->name
+  : undef;
 }
 
 sub _field_type {
