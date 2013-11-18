@@ -13,10 +13,10 @@ sub mandel {
 
   $person->relationship(has_many => cats => $cat->document_class)->monkey_patch;
   $person->relationship(has_one => father => $person->document_class)->monkey_patch;
-  $person->field([qw/ age name /]);
+  $person->field([qw/ age name /], {});
 
   $cat->relationship(belongs_to => person => $person->document_class)->monkey_patch;
-  $cat->field([qw/ type name /]);
+  $cat->field([qw/ type name /], {});
 
   $connection;
 }

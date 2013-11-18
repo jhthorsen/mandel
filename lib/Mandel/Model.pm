@@ -14,6 +14,7 @@ in mongodb.
 use Mojo::Base -base;
 use Mojo::Loader;
 use Mojo::Util;
+use Mandel::Model::Field;
 use Carp 'confess';
 
 my $LOADER = Mojo::Loader->new;
@@ -73,33 +74,52 @@ has name => '';
 
 =head2 field
 
-  $self = $self->field('name', %args);
-  $self = $self->field(['name1', 'name2'], %args);
+  $field_obj = $self->field('name');
+  $self = $self->field(name => \%meta);
+  $self = $self->field(['name1', 'name2'], \%meta);
 
-Used to define new field(s) to the document.
+Used to define new field(s) or retrieve a defined L<Mandel::Model::Field>
+object.
 
 =cut
 
 sub field {
-  my($self, $fields, %args) = @_;
+  my($self, $name, $meta) = @_;
+
+  if($meta) {
+    return $self->_add_field($name => $meta); # $name might be an array-ref
+  }
+
+  for(@{ $self->{fields} || [] }) {
+    return $_ if $name eq $_->name;
+  }
+
+  return;
+}
+
+sub _add_field {
+  my($self, $fields, $meta) = @_;
   my $class = $self->document_class;
 
   # Compile fieldibutes
-  for my $field (@{ ref $fields eq 'ARRAY' ? $fields : [$fields] }) {
-    push @{$self->{fields}}, {$field => {isa=>$args{isa} || undef}};
+  for my $name (@{ ref $fields eq 'ARRAY' ? $fields : [$fields] }) {
+    local $meta->{name} = $name;
+    my $field = Mandel::Model::Field->new($meta);
     my $code = "";
 
-    $code .= "package $class;\nsub $field {\n my \$raw = \$_[0]->data;\n";
-    $code .= "return \$raw->{'$field'} if \@_ == 1;\n";
+    $code .= "package $class;\nsub $name {\n my \$raw = \$_[0]->data;\n";
+    $code .= "return \$raw->{'$name'} if \@_ == 1;\n";
     $code .= "local \$_ = \$_[1];\n";
-    $code .= $self->_field_type($args{isa}) if $args{isa};
-    $code .= "\$_[0]->{dirty}{$field} = 1;";
-    $code .= "\$raw->{'$field'} = \$_;\n";
+    $code .= $self->_field_type($meta->{isa}) if $meta->{isa};
+    $code .= "\$_[0]->{dirty}{$name} = 1;";
+    $code .= "\$raw->{'$name'} = \$_;\n";
     $code .= "return \$_[0];\n}";
     # We compile custom attribute code for speed
     no strict 'refs';
-    warn "-- Attribute $field in $class\n$code\n\n" if $ENV{MOJO_BASE_DEBUG};
+    warn "-- Attribute $name in $class\n$code\n\n" if $ENV{MOJO_BASE_DEBUG};
     Carp::croak "Mandel::Document error: $@" unless eval "$code;1";
+
+    push @{ $self->{fields} }, $field;
   }
 
   $self;
@@ -107,29 +127,15 @@ sub field {
 
 =head2 fields
 
-  $fields = $self->fiels();
+  @fields = $self->fields;
 
-Get list of defined fields.
+Get list of L<Mandel::Model::Field> objects in the order they were added to
+thie model.
 
 =cut
 
 sub fields {
-  my @f = map { (keys %$_)[0] } @{$_[0]->{fields}};
-  \@f;
-}
-
-=head2 field_type
-
-  $self = $self->field_type('field_name');
-
-Get type of field.
-
-=cut
-
-sub field_type {
-  my($self, $type) = @_; 
-  my $f=(grep {(keys %$_)[0] eq $type} @{$self->{fields}})[0];
-  ref $f->{$type}{isa} ? $f->{$type}{isa}->name : undef;
+  @{ $_[0]->{fields} || [] };
 }
 
 sub _field_type {

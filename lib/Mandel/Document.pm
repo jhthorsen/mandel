@@ -383,7 +383,7 @@ sub import {
   }
 
   monkey_patch $caller, belongs_to => sub { $model->relationship(belongs_to => @_)->monkey_patch };
-  monkey_patch $caller, field => sub { $model->field(@_) };
+  monkey_patch $caller, field => sub { $model->field(shift, { @_ }) };
   monkey_patch $caller, has_many => sub { $model->relationship(has_many => @_)->monkey_patch };
   monkey_patch $caller, has_one => sub { $model->relationship(has_one => @_)->monkey_patch };
   monkey_patch $caller, model => sub { $model };
