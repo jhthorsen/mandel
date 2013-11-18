@@ -30,12 +30,12 @@ $doc->int("42");
 like j($doc->data), qr{\:1\.23}, '1.23 is a number';
 like j($doc->data), qr{\:42}, '42 is a number';
 
-subtest 'get types' => sub {
-  my @expected = ( 'Any', 'Int', undef, 'Num', 'Str' );
-  my @fields = sort { $a cmp $b } @{ $doc->model->fields };
-  is_deeply \@fields, [ 'any', 'int', 'nonetype', 'num', 'str' ],
-    'got cols by model';
-  is $doc->model->field_type( $fields[$_] ), $expected[$_], "got type"
+subtest 'types by model' => sub {
+  my @expected = ( 'Any', 'Int', 'Num', 'Str', undef );
+  my @fields = @{ $doc->model->fields };
+  is_deeply $doc->model->fields, [ 'any', 'int', 'num', 'str', 'nonetype' ],
+    'fields by model';
+  is $doc->model->field_type( $fields[$_] ), $expected[$_], "type $fields[$_]"
     for ( 0 .. @fields - 1 );
 };
 done_testing;
