@@ -86,6 +86,7 @@ sub field {
 
   # Compile fieldibutes
   for my $field (@{ ref $fields eq 'ARRAY' ? $fields : [$fields] }) {
+    push @{$self->{fields}}, {$field => {isa=>$args{isa} || undef}};
     my $code = "";
 
     $code .= "package $class;\nsub $field {\n my \$raw = \$_[0]->data;\n";
@@ -95,7 +96,6 @@ sub field {
     $code .= "\$_[0]->{dirty}{$field} = 1;";
     $code .= "\$raw->{'$field'} = \$_;\n";
     $code .= "return \$_[0];\n}";
-
     # We compile custom attribute code for speed
     no strict 'refs';
     warn "-- Attribute $field in $class\n$code\n\n" if $ENV{MOJO_BASE_DEBUG};
@@ -103,6 +103,33 @@ sub field {
   }
 
   $self;
+}
+
+=head2 fields
+
+  $fields = $self->fiels();
+
+Get list of defined fields.
+
+=cut
+
+sub fields {
+  my @f = map { (keys %$_)[0] } @{$_[0]->{fields}};
+  \@f;
+}
+
+=head2 field_type
+
+  $self = $self->field_type('field_name');
+
+Get type of field.
+
+=cut
+
+sub field_type {
+  my($self, $type) = @_; 
+  my $f=(grep {(keys %$_)[0] eq $type} @{$self->{fields}})[0];
+  ref $f->{$type}{isa} ? $f->{$type}{isa}->name : undef;
 }
 
 sub _field_type {
