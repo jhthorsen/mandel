@@ -2,7 +2,7 @@ NAME
     Mandel - Async model layer for MongoDB objects using Mango
 
 VERSION
-    0.10
+    0.11
 
 SYNOPSIS
       package MyModel;
@@ -157,9 +157,13 @@ SOURCE REPOSITORY
 AUTHOR
     Jan Henning Thorsen - "jhthorsen@cpan.org"
 
+    Joel Berger - "joel.a.berger@gmail.com"
+
+    Holger Rupprecht - "Holger.Rupprecht@Itelligence.de"
+
     This project is a fork of MangoModel
     <http://github.com/jberger/MangoModel>, created by Joel Berger,
-    <joel.a.berger@gmail.com>
+    "joel.a.berger@gmail.com".
 
 COPYRIGHT AND LICENSE
     Copyright (C) 2013 by Jan Henning Thorsen

@@ -400,8 +400,6 @@ L<Mojolicious>, L<Mango>, L<Mandel>
 
 Jan Henning Thorsen - C<jhthorsen@cpan.org>
 
-Joel Berger, E<lt>joel.a.berger@gmail.comE<gt>
-
 =cut
 
 1;

@@ -1,5 +1,10 @@
 Revision history for Mandel
 
+0.11     Mon Nov 18 10:52:59 2013
+       * Change Mandel::Model->field(): %meta need to be a hash-ref
+       * Change Mandel::Model->field(): Can retrive meta data for field
+       * Add Mandel::Model::Field
+
 0.10     Mon Oct 14 20:20:10 2013
        * Change Mandel::Collection::patch() works on search() arguments
        * Add Mandel::Document->patch for updating partial documents

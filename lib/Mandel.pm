@@ -6,7 +6,7 @@ Mandel - Async model layer for MongoDB objects using Mango
 
 =head1 VERSION
 
-0.10
+0.11
 
 =head1 SYNOPSIS
 
@@ -97,7 +97,7 @@ use Mandel::Model;
 use Mango;
 use Carp 'confess';
 
-our $VERSION = '0.10';
+our $VERSION = '0.11';
 
 my $LOADER = Mojo::Loader->new;
 
@@ -310,8 +310,12 @@ L<http://github.com/jhthorsen/mandel>
 
 Jan Henning Thorsen - C<jhthorsen@cpan.org>
 
+Joel Berger - C<joel.a.berger@gmail.com>
+
+Holger Rupprecht - C<Holger.Rupprecht@Itelligence.de>
+
 This project is a fork of L<MangoModel|http://github.com/jberger/MangoModel>,
-created by Joel Berger, E<lt>joel.a.berger@gmail.comE<gt>
+created by Joel Berger, C<joel.a.berger@gmail.com>.
 
 =head1 COPYRIGHT AND LICENSE
 
