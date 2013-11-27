@@ -18,5 +18,15 @@ ok $obj->is_changed, 'object reports that it has been changed';
 
 is( MyModel::Menu->model->collection_name, 'menus', 'import arg is collection name' );
 
+eval <<"DOCUMENT" or die $@;
+package MyModel::Menu;
+sub _build_data {
+  +{ soup => 'cold' }
+}
+1;
+DOCUMENT
+
+is( MyModel::Menu->new->soup, 'cold', 'soup() value from _build_data' );
+
 done_testing;
 

@@ -121,7 +121,9 @@ has _storage_collection => sub {
   $self->connection->_storage_collection($self->model->collection_name);
 };
 
-has data => sub { +{} }; # raw mongodb document data
+has data => sub { shift->_build_data }; # raw mongodb document data
+
+sub _build_data { +{} }
 
 =head1 METHODS
 

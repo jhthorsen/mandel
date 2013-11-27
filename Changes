@@ -1,5 +1,8 @@
 Revision history for Mandel
 
+0.12
+       * Add _build_data() for $document->data() default values
+
 0.11     Mon Nov 18 10:52:59 2013
        * Change Mandel::Model->field(): %meta need to be a hash-ref
        * Change Mandel::Model->field(): Can retrive meta data for field
