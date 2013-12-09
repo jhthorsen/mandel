@@ -19,22 +19,6 @@ our $AUTOLOAD;
 
 has _backend => sub { shift->_backend_class->new };
 
-=head1 METHODS
-
-=head2 new
-
-  $self = $class->new($url);
-
-=cut
-
-sub new {
-  my $self = shift->SUPER::new;
-  my $url = shift;
-
-  $self->_backend($self->_backend_class->new($url)) if $url;
-  $self;
-}
-
 =head2 AUTOLOAD
 
 All other methods will be proxied to the backend object.

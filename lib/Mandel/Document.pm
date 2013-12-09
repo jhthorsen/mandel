@@ -244,14 +244,14 @@ sub remove {
   warn "[$self\::remove] @{[$self->id]}\n" if DEBUG;
 
   if ($cb) {
-    $c->remove( @args, sub {
+    $c->remove(@args, sub {
       my($collection, $err, $doc) = @_;
       $self->_mark_removed_dirty unless $err;
       $self->$cb($err);
     });
   }
   else {
-    $c->remove( @args );
+    $c->remove(@args);
     $self->_mark_removed_dirty;
   }
 

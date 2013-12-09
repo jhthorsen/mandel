@@ -12,7 +12,7 @@ sub mandel {
 }
 
 sub redis {
-  shift->_connection("redis//localhost/14");
+  shift->_connection("redis://localhost/14");
 }
 
 sub _connection {

@@ -16,11 +16,28 @@ L<Redis|http://redis.io> using L<Mojo::Redis>.
 
 =cut
 
-use Mojo::Base -base;
+use Mojo::Base 'Mandel::Storage';
+use Mojo::Redis;
 use Mandel::Storage::Redis::Collection;
 # use Mandel::Storage::Redis::Cursor;
 
+has _backend_class => 'Mojo::Redis';
+
 =head1 METHODS
+
+=head2 new
+
+  $self = $class->new($url);
+
+=cut
+
+sub new {
+  my $self = shift->SUPER::new;
+  my $url = shift;
+
+  $self->_backend($self->_backend_class->new(server => $url)) if $url;
+  $self;
+}
 
 =head2 collection
 

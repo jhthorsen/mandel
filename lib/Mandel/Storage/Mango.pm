@@ -21,6 +21,22 @@ use Mango;
 
 has _backend_class => 'Mango';
 
+=head1 METHODS
+
+=head2 new
+
+  $self = $class->new($url);
+
+=cut
+
+sub new {
+  my $self = shift->SUPER::new;
+  my $url = shift;
+
+  $self->_backend($self->_backend_class->new($url)) if $url;
+  $self;
+}
+
 =head2 collection
 
   $obj = $self->collection($name);
