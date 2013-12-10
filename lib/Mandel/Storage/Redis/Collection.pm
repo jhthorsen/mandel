@@ -7,6 +7,7 @@ Mandel::Storage::Redis::Collection - Mirror Mango::Collection
 =cut
 
 use Mojo::Base -base;
+use Time::HiRes qw( time );
 use constant DEBUG => $ENV{DEBUG} ? 1 : 0;
 
 our $VERSION = '0.01';
@@ -49,7 +50,7 @@ sub remove {
 
       $redis->del("$prefix:d:$_") for @$members;
       $redis->del("$prefix:m:keys", $delay->begin);
-      $redis->srem("$namespace:i:_id", $where->{_id}, $delay->begin);
+      $redis->zrem("$namespace:i:_id", $where->{_id}, $delay->begin);
       $redis->exec($delay->begin);
     },
   );
@@ -88,14 +89,15 @@ sub save {
     sub { # get keys in document and start transaction
       my($delay) = @_;
       $redis->smembers("$prefix:m:keys" => $delay->begin);
+      $redis->zscore("$namespace:i:_id", $doc->{_id}, $delay->begin);
       $redis->multi($delay->begin);
       $redis->del("$prefix:m:keys", $delay->begin);
-      $redis->sadd("$namespace:i:_id", $doc->{_id}, $delay->begin);
     },
     sub { # add new keys to document and delete old data
-      my($delay, $members, $txn_started, $deleted) = @_;
+      my($delay, $members, $exists, $txn_started, $deleted) = @_;
 
       $redis->del("$prefix:d:$_") for @$members;
+      $redis->zadd("$namespace:i:_id", time, $doc->{_id}, $delay->begin) unless $exists;
       $redis->sadd("$prefix:m:keys" => keys(%$doc), $delay->begin);
     },
     sub { # save document data
@@ -173,28 +175,35 @@ sub _patch {
   my $prefix = $self->_prefix($where);
   my $redis = $self->storage->_backend;
   my $namespace = $self->name;
-  my $delay = Mojo::IOLoop->delay;
 
   $doc = $doc->{'$set'};
 
-  $redis->multi($delay->begin);
-  $redis->sadd("$prefix:m:keys", keys %$doc);
+  Mojo::IOLoop->delay(
+    sub {
+      my($delay) = @_;
+      $redis->zscore("$namespace:i:_id", $where->{_id}, $delay->begin);
+      $redis->multi($delay->begin);
+      $redis->sadd("$prefix:m:keys", keys %$doc);
+    },
+    sub {
+      my($delay, $exists, $txn_started, $added) = @_;
 
-  for my $k (keys %$doc) {
-    if(ref $doc->{$k} eq 'ARRAY') {
-      $redis->del($k)->lpush("$prefix:d:$k" => @{ $doc->{$k} });
-    }
-    elsif(ref $doc->{$k} eq 'HASH') {
-      $redis->del($k)->hmset("$prefix:d:$k" => %{ $doc->{$k} });
-    }
-    else {
-      $redis->set("$prefix:d:$k" => $doc->{$k});
-    }
-  }
+      for my $k (keys %$doc) {
+        if(ref $doc->{$k} eq 'ARRAY') {
+          $redis->del($k)->lpush("$prefix:d:$k" => @{ $doc->{$k} });
+        }
+        elsif(ref $doc->{$k} eq 'HASH') {
+          $redis->del($k)->hmset("$prefix:d:$k" => %{ $doc->{$k} });
+        }
+        else {
+          $redis->set("$prefix:d:$k" => $doc->{$k});
+        }
+      }
 
-  $redis->sadd("$namespace:i:_id", $where->{_id}, $delay->begin);
-  $redis->exec($delay->begin);
-  $delay;
+      $redis->zadd("$namespace:i:_id", time, $doc->{_id}) unless $exists;
+      $redis->exec($delay->begin);
+    },
+  );
 }
 
 sub _prefix {
