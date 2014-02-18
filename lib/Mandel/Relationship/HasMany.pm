@@ -6,10 +6,16 @@ Mandel::Relationship::HasMany - A field relates to many other mongodb document
 
 =head1 DESCRIPTION
 
-Example:
+Using DSL from L<Mandel::Document>:
+
+  package MyModel::Cat;
+  use Mandel::Document;
+  has_many owners => 'MyModel::Person';
+
+Using object oriented interface:
 
   MyModel::Cat
-    ->description
+    ->model
     ->relationship(has_many => owners => 'MyModel::Person');
 
 Will add:
@@ -26,6 +32,8 @@ Will add:
   $self = MyModel::Cat->new->owners(sub {
     my($self, $err, $person_objs) = @_;
   });
+
+See also L<Mandel::Model/relationship>.
 
 =cut
 

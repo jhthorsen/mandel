@@ -156,13 +156,15 @@ sub _field_type {
 
 =head2 relationship
 
-  $rel_obj = $self->relationship($type => $field_name => 'Other::Document::Class');
+  $rel_obj = $self->relationship($type => $field_name => 'Other::Document::Class', %args);
   $rel_obj = $self->relationship($field_name);
 
 This method is used to describe a relationship between two documents.
 
 See L<Mandel::Relationship::BelongsTo>, L<Mandel::Relationship::HasMany> or
 L<Mandel::Relationship::HasOne>.
+
+C<%args> is passed on the the L<relationship|Mandel::Relationship> constructor.
 
 =cut
 

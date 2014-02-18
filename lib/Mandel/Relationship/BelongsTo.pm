@@ -6,10 +6,16 @@ Mandel::Relationship::BelongsTo - A document is owned by another mongodb documen
 
 =head1 DESCRIPTION
 
-Example:
+Using DSL from L<Mandel::Document>:
+
+  package MyModel::Cat;
+  use Mandel::Document;
+  belongs_to owner => 'MyModel::Person';
+
+Using object oriented interface:
 
   MyModel::Cat
-    ->description
+    ->model
     ->relationship(belongs_to => owner => 'MyModel::Person');
 
 Will add:
@@ -23,6 +29,8 @@ Will add:
 
   $person = MyModel::Cat->new->owner;
   $self = MyModel::Cat->new->owner(sub { my($self, $err, $person) = @_; });
+
+See also L<Mandel::Model/relationship>.
 
 =cut
 
