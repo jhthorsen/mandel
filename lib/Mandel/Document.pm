@@ -23,7 +23,7 @@ Spell out the options with a list:
   package MyModel::Person;
   use Mandel::Document (
     extends => "My::Document::Class",
-    collection => "some_collection_name",
+    collection_name => "some_collection_name",
     collection_class => "My::Custom::Collection",
   );
 
