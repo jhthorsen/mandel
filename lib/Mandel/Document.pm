@@ -124,7 +124,7 @@ has in_storage => 0;
 
 has _storage_collection => sub {
   my $self = shift;
-  $self->connection->_storage_collection($self->model->collection_name);
+  $self->connection->storage->collection($self->model->collection_name);
 };
 
 has data => sub { shift->_build_data }; # raw mongodb document data
@@ -252,14 +252,14 @@ sub remove {
   warn "[$self\::remove] @{[$self->id]}\n" if DEBUG;
 
   if ($cb) {
-    $c->remove( @args, sub {
+    $c->remove(@args, sub {
       my($collection, $err, $doc) = @_;
       $self->_mark_removed_dirty unless $err;
       $self->$cb($err);
     });
   }
   else {
-    $c->remove( @args );
+    $c->remove(@args);
     $self->_mark_removed_dirty;
   }
 
