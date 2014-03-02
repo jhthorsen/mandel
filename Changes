@@ -1,6 +1,6 @@
 Revision history for Mandel
 
-0.13
+0.13     Sun Mar  2 16:25:48 2014
        * Add missing exception handling in HasOne relationship
          Contributor: Sebastian Riedel
        * Fix $col->remove() received $doc instead of $err in callback
