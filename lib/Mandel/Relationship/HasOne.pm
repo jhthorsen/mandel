@@ -68,14 +68,15 @@ sub monkey_patch {
           $related_collection->search({ sprintf('%s.$id', $foreign_field), $doc->id })->remove($delay->begin);
         },
         sub {
-          my($delay, @err) = @_;
+          my($delay, $err) = @_;
+          return $delay->begin(0)->($err) if $err;
           $doc->save($delay->begin);
           $obj->data->{$foreign_field} = bson_dbref $related_model->name, $doc->id;
           $obj->save($delay->begin);
         },
         sub {
-          my($delay, @err) = @_;
-          $doc->$cb($err[-1], $obj);
+          my($delay, $err) = @_;
+          $doc->$cb($err, $obj);
         },
       );
     }

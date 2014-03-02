@@ -206,7 +206,7 @@ sub remove {
   my @args = $self->{query};
 
   warn '[Mandel::Collection::remove] ', Data::Dumper->new([$self->{query}])->Indent(1)->Sortkeys(1)->Terse(1)->Maxdepth(3)->Dump if DEBUG;
-  push @args, sub{shift; $self->$cb($_[1])} if $cb;
+  push @args, sub{$self->$cb($_[1])} if $cb;
 
   $c->remove(@args);
   $self;

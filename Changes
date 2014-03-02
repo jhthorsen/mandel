@@ -1,5 +1,12 @@
 Revision history for Mandel
 
+0.13
+       * Add missing exception handling in HasOne relationship
+         Contributor: Sebastian Riedel
+       * Fix $col->remove() received $doc instead of $err in callback
+       * Fix documentation error
+         Contributor: Alexey Neyasov
+
 0.12     Thu Feb 20 14:28:55 2014
        * Add _build_data() for $document->data() default values
        * Improved documentation
