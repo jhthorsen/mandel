@@ -1,11 +1,15 @@
 Revision history for Mandel
 
+0.14     Wed Mar  5 06:57:04 2014
+       * Add Mandel::Document::TO_JSON()
+         Contributor: Sebastian Riedel - https://github.com/jhthorsen/mandel/issues/10
+
 0.13     Sun Mar  2 16:25:48 2014
        * Add missing exception handling in HasOne relationship
-         Contributor: Sebastian Riedel
+         Contributor: Sebastian Riedel - https://github.com/jhthorsen/mandel/issues/7
        * Fix $col->remove() received $doc instead of $err in callback
        * Fix documentation error
-         Contributor: Alexey Neyasov
+         Contributor: Alexey Neyasov - https://github.com/jhthorsen/mandel/issues/8
 
 0.12     Thu Feb 20 14:28:55 2014
        * Add _build_data() for $document->data() default values

@@ -22,4 +22,6 @@ is $doc->bar, 123, 'bar is 123';
 is $doc->baz(42), $doc, 'baz setter return self';
 is $doc->baz, 42, 'baz is 42';
 
+is_deeply $doc->TO_JSON, $doc->data, 'TO_JSON() is alias for data()';
+
 done_testing;
