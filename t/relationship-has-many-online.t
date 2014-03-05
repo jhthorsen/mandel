@@ -1,7 +1,7 @@
 use t::Online;
 use Test::More;
 
-plan tests => 9;
+plan tests => 10;
 my $connection = t::Online->mandel;
 my $name = rand;
 
@@ -38,6 +38,9 @@ my $name = rand;
     Mojo::IOLoop->stop;
   });
   Mojo::IOLoop->start;
+  
+  is ref $person->cats, 'ARRAY', 'array cat docs';
+  
 }
 
 $connection->storage->db->command(dropDatabase => 1);
