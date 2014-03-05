@@ -34,6 +34,19 @@ with a MongoDB backend. The L<Mandel> class defines the overall model,
 including high level interaction. Individual results, called Types inherit
 from L<Mandel::Document>.
 
+An object of this class gets automatically serialized by L<Mojo::JSON>.
+See L</TO_JSON> and L<Mojo::JSON#DESCRIPTION> for details.
+
+Example:
+
+  use Mojolicious::Lite;
+  # ...
+  get '/some/resource' => sub {
+    my $c = shift;
+    # find some document...
+    $c->render(json => $mandel_doc_object);
+  };
+
 =cut
 
 use Mojo::Base 'Mojo::Base';
@@ -399,6 +412,17 @@ sub import {
   @_ = ($class, $base_class);
   goto &Mojo::Base::import;
 }
+
+=head2 TO_JSON
+
+Alias for L</data>.
+
+This method allow the document to get automatically serialized by
+L<Mojo::JSON>.
+
+=cut
+
+sub TO_JSON { shift->data }
 
 =head1 SEE ALSO
 
