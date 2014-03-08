@@ -78,8 +78,10 @@ sub _monkey_patch_all_method {
   Mojo::Util::monkey_patch($self->document_class, $self->accessor, sub {
     my($doc, $cb) = @_;
 
+    # Blocking
     return $doc->$search->all unless $cb;
 
+    # Non-blocking
     $doc->$search->all(sub {
       my($collection, $err, $objs) = @_;
       $doc->$cb($err, $objs);
@@ -102,17 +104,26 @@ sub _monkey_patch_add_method {
     if(ref $obj eq 'HASH') {
       $obj = $related_model->new_collection($doc->connection)->create($obj);
     }
+    $obj->data->{$foreign_field} = bson_dbref $related_model->name, $doc->id;
 
+    # Blocking
+    unless ($cb) {
+      $obj->save;
+      $doc->save;
+      return $obj;
+    }
+
+    # Non-blocking
     Mojo::IOLoop->delay(
       sub {
         my($delay) = @_;
-        $obj->data->{$foreign_field} = bson_dbref $related_model->name, $doc->id;
         $obj->save($delay->begin);
         $doc->save($delay->begin);
       },
       sub {
-        my($delay, @err) = @_;
-        $doc->$cb($err[-1], $obj);
+        my($delay, $o_err, $d_err) = @_;
+        my $err = $o_err || $d_err;
+        $doc->$cb($err, $obj);
       },
     );
 
