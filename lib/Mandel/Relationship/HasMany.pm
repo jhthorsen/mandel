@@ -78,6 +78,8 @@ sub _monkey_patch_all_method {
   Mojo::Util::monkey_patch($self->document_class, $self->accessor, sub {
     my($doc, $cb) = @_;
 
+    return $doc->$search->all unless $cb;
+
     $doc->$search->all(sub {
       my($collection, $err, $objs) = @_;
       $doc->$cb($err, $objs);
