@@ -61,7 +61,16 @@ sub monkey_patch {
       if(ref $obj eq 'HASH') {
         $obj = $related_collection->create($obj);
       }
+      $obj->data->{$foreign_field} = bson_dbref $related_model->name, $doc->id;
+      
+      # Blocking
+      unless ($cb) {
+        $obj->save;
+        $doc->save;
+        return $doc;
+      }
 
+      # Non-blocking
       Mojo::IOLoop->delay(
         sub {
           my($delay) = @_;
@@ -71,11 +80,11 @@ sub monkey_patch {
           my($delay, $err) = @_;
           return $delay->begin(0)->($err) if $err;
           $doc->save($delay->begin);
-          $obj->data->{$foreign_field} = bson_dbref $related_model->name, $doc->id;
           $obj->save($delay->begin);
         },
         sub {
-          my($delay, $err) = @_;
+          my($delay, $o_err, $d_err) = @_;
+          my $err = $o_err || $d_err;
           $doc->$cb($err, $obj);
         },
       );
@@ -84,7 +93,7 @@ sub monkey_patch {
       $related_model
         ->new_collection($doc->connection)
         ->search({ sprintf('%s.$id', $foreign_field), $doc->id })
-        ->single(sub { $doc->$cb(@_[1, 2]) });
+        ->single($cb ? sub { $doc->$cb(@_[1, 2]) } : undef);
     }
 
     return $doc;
