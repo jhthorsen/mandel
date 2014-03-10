@@ -54,9 +54,9 @@ sub monkey_patch {
     my $doc = shift;
     my $obj = shift;
     my $related_model = $self->_related_model;
-
+    my $related_collection = $related_model->new_collection($doc->connection);
+    
     if($obj) { # set ===========================================================
-      my $related_collection = $self->_related_model->new_collection($doc->connection);
 
       if(ref $obj eq 'HASH') {
         $obj = $related_collection->create($obj);
@@ -65,6 +65,7 @@ sub monkey_patch {
       
       # Blocking
       unless ($cb) {
+        $related_collection->search({ sprintf('%s.$id', $foreign_field), $doc->id })->remove();
         $obj->save;
         $doc->save;
         return $doc;
@@ -90,10 +91,9 @@ sub monkey_patch {
       );
     }
     else { # get =============================================================
-      $related_model
-        ->new_collection($doc->connection)
-        ->search({ sprintf('%s.$id', $foreign_field), $doc->id })
-        ->single($cb ? sub { $doc->$cb(@_[1, 2]) } : undef);
+      my $cursor = $related_collection->search({ sprintf('%s.$id', $foreign_field), $doc->id });
+      return $cursor->single unless $cb;
+      $cursor->single(sub { $doc->$cb(@_[1, 2]) });
     }
 
     return $doc;

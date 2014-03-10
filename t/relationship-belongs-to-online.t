@@ -1,7 +1,7 @@
 use t::Online;
 use Test::More;
 
-plan tests => 11;
+plan tests => 12;
 my $connection = t::Online->mandel;
 my $name = rand;
 
@@ -58,6 +58,7 @@ $connection->storage->db->command(dropDatabase => 1);
   
   # Blocking
   ok $cat->person, 'got person';
+  isnt $cat, $cat->person, 'invocant doc';
   $cat->person({ name => $name }); 
   ok $cat->person->in_storage, 'person in_storage';
   isnt $cat->person->id, $id, 'replaced person';

@@ -65,14 +65,15 @@ sub monkey_patch {
     my $doc = shift;
     my $obj = shift;
     my $related_model = $self->_related_model;
-
+    my $related_collection = $related_model->new_collection($doc->connection);
+    
     if($obj) { # set ===========================================================
       if(UNIVERSAL::isa($obj, 'Mango::BSON::ObjectID')) {
         $doc->data->{$foreign_field} = bson_dbref $related_model->name, $obj;
         return $doc;
       }
       if(ref $obj eq 'HASH') {
-        $obj = $related_model->new_collection($doc->connection)->create($obj);
+        $obj = $related_collection->create($obj);
       }
       $doc->data->{$foreign_field} = bson_dbref $related_model->name, $obj->id;
       
@@ -98,10 +99,9 @@ sub monkey_patch {
       );
     }
     else { # get =============================================================
-      $related_model
-        ->new_collection($doc->connection)
-        ->search({ _id => $doc->data->{$foreign_field}{'$id'} })
-        ->single($cb ? sub { $doc->$cb(@_[1, 2]) } : undef);
+      my $cursor = $related_collection->search({ _id => $doc->data->{$foreign_field}{'$id'} });
+      return $cursor->single unless $cb;
+      $cursor->single(sub { $doc->$cb(@_[1, 2]) });
     }
 
     $doc;

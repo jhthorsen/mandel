@@ -1,7 +1,7 @@
 use t::Online;
 use Test::More;
 
-plan tests => 9;
+plan tests => 10;
 my $connection = t::Online->mandel;
 my $name = rand;
 
@@ -40,6 +40,7 @@ my $name = rand;
   
   # Blocking
   ok $person->father, 'got father';
+  isnt $person, $person->father, 'invocant doc';
   $person->father({ name => $name });
   ok $person->father->in_storage, 'father in_storage';
   isnt $person->father->id, $id, 'replaced father';
