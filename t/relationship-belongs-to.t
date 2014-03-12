@@ -9,7 +9,7 @@ my $person = $connection->model(person => {})->model('person');
 
 isa_ok $cat->relationship(belongs_to => person => $person->document_class)->monkey_patch, 'Mandel::Relationship::BelongsTo';
 
-my $doc = $cat->document_class->new({});
+my $doc = $cat->document_class->new({ connection => bless {}, 'dummy_class_connection_required' });
 my $oid = bson_oid;
 
 is $doc->person($oid), $doc, 'belongs_to with oid returns self';

@@ -6,7 +6,7 @@ Mandel - Async model layer for MongoDB objects using Mango
 
 =head1 VERSION
 
-0.14
+0.15
 
 =head1 SYNOPSIS
 
@@ -97,7 +97,7 @@ use Mandel::Model;
 use Mango;
 use Carp 'confess';
 
-our $VERSION = '0.14';
+our $VERSION = '0.15';
 
 my $LOADER = Mojo::Loader->new;
 
