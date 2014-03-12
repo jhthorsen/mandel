@@ -1,7 +1,7 @@
 use t::Online;
 use Test::More;
 
-plan tests => 8;
+plan tests => 12;
 my $connection = t::Online->mandel;
 my $name = rand;
 
@@ -11,6 +11,7 @@ $connection->storage->db->command(dropDatabase => 1);
   my $cat = $connection->collection('cat')->create({});
   my $id;
 
+  # Non-blocking
   ok !$cat->in_storage, 'cat not in_storage';
   $cat->person({ name => $name }, sub {
     my($cat, $err, $person) = @_;
@@ -50,9 +51,18 @@ $connection->storage->db->command(dropDatabase => 1);
   $cat->person(sub {
     my($cat, $err, $person) = @_;
     is $person->id, $id, 'got person';
+    $id = $person->id;
     Mojo::IOLoop->stop;
   });
   Mojo::IOLoop->start;
+  
+  # Blocking
+  ok $cat->person, 'got person';
+  isa_ok $cat->person, 'Mandel::Document::__ANON_1__::Person';
+  $cat->person({ name => $name }); 
+  ok $cat->person->in_storage, 'person in_storage';
+  isnt $cat->person->id, $id, 'replaced person';
+  
 }
 
 $connection->storage->db->command(dropDatabase => 1);

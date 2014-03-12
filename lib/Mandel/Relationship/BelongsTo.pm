@@ -65,34 +65,43 @@ sub monkey_patch {
     my $doc = shift;
     my $obj = shift;
     my $related_model = $self->_related_model;
-
+    my $related_collection = $related_model->new_collection($doc->connection);
+    
     if($obj) { # set ===========================================================
       if(UNIVERSAL::isa($obj, 'Mango::BSON::ObjectID')) {
         $doc->data->{$foreign_field} = bson_dbref $related_model->name, $obj;
         return $doc;
       }
       if(ref $obj eq 'HASH') {
-        $obj = $related_model->new_collection($doc->connection)->create($obj);
+        $obj = $related_collection->create($obj);
+      }
+      $doc->data->{$foreign_field} = bson_dbref $related_model->name, $obj->id;
+      
+      # Blocking
+      unless ($cb) {
+        $obj->save;
+        $doc->save;
+        return $doc;
       }
 
+      # Non-blocking
       Mojo::IOLoop->delay(
         sub {
           my($delay) = @_;
           $obj->save($delay->begin);
-          $doc->data->{$foreign_field} = bson_dbref $related_model->name, $obj->id;
           $doc->save($delay->begin);
         },
         sub {
-          my($delay, @err) = @_;
-          $doc->$cb($err[-1], $obj);
+          my($delay, $o_err, $d_err) = @_;
+          my $err = $o_err || $d_err;
+          $doc->$cb($err, $obj);
         },
       );
     }
     else { # get =============================================================
-      $related_model
-        ->new_collection($doc->connection)
-        ->search({ _id => $doc->data->{$foreign_field}{'$id'} })
-        ->single(sub { $doc->$cb(@_[1, 2]) });
+      my $cursor = $related_collection->search({ _id => $doc->data->{$foreign_field}{'$id'} });
+      return $cursor->single unless $cb;
+      $cursor->single(sub { $doc->$cb(@_[1, 2]) });
     }
 
     $doc;

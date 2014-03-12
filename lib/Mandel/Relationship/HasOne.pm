@@ -54,14 +54,24 @@ sub monkey_patch {
     my $doc = shift;
     my $obj = shift;
     my $related_model = $self->_related_model;
-
+    my $related_collection = $related_model->new_collection($doc->connection);
+    
     if($obj) { # set ===========================================================
-      my $related_collection = $self->_related_model->new_collection($doc->connection);
 
       if(ref $obj eq 'HASH') {
         $obj = $related_collection->create($obj);
       }
+      $obj->data->{$foreign_field} = bson_dbref $related_model->name, $doc->id;
+      
+      # Blocking
+      unless ($cb) {
+        $related_collection->search({ sprintf('%s.$id', $foreign_field), $doc->id })->remove();
+        $obj->save;
+        $doc->save;
+        return $doc;
+      }
 
+      # Non-blocking
       Mojo::IOLoop->delay(
         sub {
           my($delay) = @_;
@@ -71,20 +81,19 @@ sub monkey_patch {
           my($delay, $err) = @_;
           return $delay->begin(0)->($err) if $err;
           $doc->save($delay->begin);
-          $obj->data->{$foreign_field} = bson_dbref $related_model->name, $doc->id;
           $obj->save($delay->begin);
         },
         sub {
-          my($delay, $err) = @_;
+          my($delay, $o_err, $d_err) = @_;
+          my $err = $o_err || $d_err;
           $doc->$cb($err, $obj);
         },
       );
     }
     else { # get =============================================================
-      $related_model
-        ->new_collection($doc->connection)
-        ->search({ sprintf('%s.$id', $foreign_field), $doc->id })
-        ->single(sub { $doc->$cb(@_[1, 2]) });
+      my $cursor = $related_collection->search({ sprintf('%s.$id', $foreign_field), $doc->id });
+      return $cursor->single unless $cb;
+      $cursor->single(sub { $doc->$cb(@_[1, 2]) });
     }
 
     return $doc;
