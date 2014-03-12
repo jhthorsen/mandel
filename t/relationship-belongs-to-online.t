@@ -58,7 +58,7 @@ $connection->storage->db->command(dropDatabase => 1);
   
   # Blocking
   ok $cat->person, 'got person';
-  isnt $cat, $cat->person, 'invocant doc';
+  isa_ok $cat->person, 'Mandel::Document::__ANON_1__::Person';
   $cat->person({ name => $name }); 
   ok $cat->person->in_storage, 'person in_storage';
   isnt $cat->person->id, $id, 'replaced person';
