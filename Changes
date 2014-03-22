@@ -1,5 +1,9 @@
 Revision history for Mandel
 
+0.16     Sat Mar 22 13:48:14 2014
+       * Change use Mandel; will be deprecated
+       * Fix annoying perl warning on "use Mandel"
+
 0.15     Wed Mar 12 18:35:49 2014
        * Add more blocking methods
          Contributors: Joel Berger and Alexey Neyasov

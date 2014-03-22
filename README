@@ -2,10 +2,10 @@ NAME
     Mandel - Async model layer for MongoDB objects using Mango
 
 VERSION
-    0.15
+    0.16
 
 SYNOPSIS
-      # create your custom model base class
+      # create your custom model class
       package MyModel;
       use Mojo::Base "Mandel";
       1;
@@ -29,7 +29,7 @@ SYNOPSIS
       has_one favorite_cat => 'MyModel::Cat';
       1;
 
-      # use the model in you application
+      # use the model in your application
       package main;
       my $connection = MyModel->connect("mongodb://localhost/my_db");
       my $persons = $connection->collection('person');

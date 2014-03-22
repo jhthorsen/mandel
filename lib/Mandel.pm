@@ -6,11 +6,11 @@ Mandel - Async model layer for MongoDB objects using Mango
 
 =head1 VERSION
 
-0.15
+0.16
 
 =head1 SYNOPSIS
 
-  # create your custom model base class
+  # create your custom model class
   package MyModel;
   use Mojo::Base "Mandel";
   1;
@@ -34,7 +34,7 @@ Mandel - Async model layer for MongoDB objects using Mango
   has_one favorite_cat => 'MyModel::Cat';
   1;
 
-  # use the model in you application
+  # use the model in your application
   package main;
   my $connection = MyModel->connect("mongodb://localhost/my_db");
   my $persons = $connection->collection('person');
@@ -104,7 +104,7 @@ use Mandel::Model;
 use Mango;
 use Carp 'confess';
 
-our $VERSION = '0.15';
+our $VERSION = '0.16';
 
 my $LOADER = Mojo::Loader->new;
 
