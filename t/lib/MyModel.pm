@@ -1,4 +1,3 @@
 package MyModel;
-use Mandel;
-
+use Mojo::Base 'Mandel';
 1;

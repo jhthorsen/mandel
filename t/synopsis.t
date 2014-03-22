@@ -8,7 +8,7 @@ my $db = "mandel_test_$0"; $db =~ s/\W/_/g;
 
 {
   package MyModel;
-  use Mandel;
+  use Mojo::Base 'Mandel';
 
   package MyModel::Cat;
   use Mandel::Document;

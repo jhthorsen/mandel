@@ -6,11 +6,11 @@ $SIG{__WARN__} = sub { $_[0] =~ /Too late to run CHECK/ or push @warnings, $_[0]
 
 eval <<"CODE" or die $@;
 package My::Model;
-use Mandel;
+use Mojo::Base 'Mandel';
 1;
 CODE
 
-is_deeply \@warnings, [], 'no warnings on use Mandel';
+is_deeply \@warnings, [], 'no warnings on use Mojo::Base Mandel';
 
 $INC{'My/Model.pm'} = 'test123';
 eval <<"CODE" or die $@;
@@ -21,5 +21,13 @@ use My::Model;
 CODE
 
 is_deeply \@warnings, [], 'no warnings on use My::Model';
+
+eval <<"CODE" or die $@;
+package My::Model2;
+use Mandel;
+1;
+CODE
+
+like $warnings[0], qr{use Mandel; will be deprecated.}, 'use Mandel; will be deprecated';
 
 done_testing;
