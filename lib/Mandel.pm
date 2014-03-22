@@ -289,7 +289,7 @@ See L</SYNOPSIS>.
 sub import {
   my($class) = @_;
   my $caller = caller;
-
+  return unless $class eq __PACKAGE__;
   @_ = ($class, __PACKAGE__);
   goto &Mojo::Base::import;
 }
