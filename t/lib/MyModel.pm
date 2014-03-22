@@ -1,4 +1,4 @@
 package MyModel;
-use Mandel -base;
+use Mandel;
 
 1;

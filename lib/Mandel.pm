@@ -8,20 +8,10 @@ Mandel - Async model layer for MongoDB objects using Mango
 
 0.15
 
-=head1 IMPORTANT CHANGE IN VERSION 0.16
-
-The base class that inherit from Mandel need to use this syntax:
-
-  use Mandel -base;
-
-This change is to avoid this warning on "use MyModel":
-
-  Subroutine Some::App::has redefined at Mojo/Base.pm
-
 =head1 SYNOPSIS
 
   package MyModel;
-  use Mandel -base;
+  use Mandel;
 
   package MyModel::Cat;
   use Mandel::Document;
@@ -297,8 +287,9 @@ See L</SYNOPSIS>.
 =cut
 
 sub import {
-  my($class, $arg) = @_;
-  return unless $arg and $arg eq '-base';
+  my($class) = @_;
+  my $caller = caller;
+
   @_ = ($class, __PACKAGE__);
   goto &Mojo::Base::import;
 }
