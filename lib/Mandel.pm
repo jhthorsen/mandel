@@ -264,7 +264,7 @@ sub model {
   $self->initialize(@names, \%args);
   $self->initialize(\%args);
 
-Takes a list of document names. Calls the L<Mango::Document/initialize> method
+Takes a list of document names. Calls the L<Mandel::Document/initialize> method
 on any document given as input. C<@names> default to L</all_document_names>
 unless specified.
 
