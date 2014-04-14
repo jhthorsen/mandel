@@ -174,7 +174,7 @@ sub patch {
   my($self, $changes, $cb) = @_;
   my $extra = $self->{extra};
 
-  warn '[Mandel::Collection::patch] ', Data::Dumper->new([$changes, $self->{query}, $extra])->Indent(1)->Sortkeys(1)->Terse(1)->Maxdepth(3)->Dump if DEBUG;
+  warn '[Mandel::Collection::patch] ', Data::Dumper->new([$changes, $self->{query}, $extra])->Indent(1)->Sortkeys(1)->Terse(1)->Dump if DEBUG;
   $self->_storage_collection->update(
     $self->{query} || {},
     {
@@ -205,7 +205,7 @@ sub remove {
   my $c = $self->_storage_collection;
   my @args = $self->{query};
 
-  warn '[Mandel::Collection::remove] ', Data::Dumper->new([$self->{query}])->Indent(1)->Sortkeys(1)->Terse(1)->Maxdepth(3)->Dump if DEBUG;
+  warn '[Mandel::Collection::remove] ', Data::Dumper->new([$self->{query}])->Indent(1)->Sortkeys(1)->Terse(1)->Dump if DEBUG;
   push @args, sub{$self->$cb($_[1])} if $cb;
 
   $c->remove(@args);
@@ -227,7 +227,7 @@ sub save {
 
   $raw->{_id} ||= bson_oid;
 
-  warn '[Mandel::Collection::save] ', Data::Dumper->new([$raw])->Indent(1)->Sortkeys(1)->Terse(1)->Maxdepth(3)->Dump if DEBUG;
+  warn '[Mandel::Collection::save] ', Data::Dumper->new([$raw])->Indent(1)->Sortkeys(1)->Terse(1)->Dump if DEBUG;
 
   unless ($cb) {
     $c->save($raw);
@@ -298,7 +298,12 @@ sub _new_cursor {
 
   $cursor->query($self->{query}) if $self->{query};
   $cursor->$_($extra->{$_}) for keys %$extra;
-  warn '[', +(caller 1)[3], '] ', Data::Dumper->new([$cursor])->Indent(1)->Sortkeys(1)->Terse(1)->Maxdepth(3)->Dump if DEBUG;
+
+  if(DEBUG) {
+    local $cursor->{collection}{db} = $cursor->{collection}{db}{name}; # hide big data structure
+    warn '[', +(caller 1)[3], '] ', Data::Dumper->new([$cursor])->Indent(1)->Sortkeys(1)->Terse(1)->Dump;
+  }
+
   $cursor;
 };
 

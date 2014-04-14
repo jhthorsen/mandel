@@ -308,7 +308,7 @@ sub save {
 
   $self->id; # make sure we have an ObjectID
 
-  warn "[$self\::save] ", Data::Dumper->new([$self->data])->Indent(1)->Sortkeys(1)->Terse(1)->Maxdepth(3)->Dump if DEBUG;
+  warn "[$self\::save] ", Data::Dumper->new([$self->data])->Indent(1)->Sortkeys(1)->Terse(1)->Dump if DEBUG;
   my $c = $self->_storage_collection;
 
   if ($cb) {

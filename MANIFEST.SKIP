@@ -7,4 +7,7 @@
 ^Makefile$
 ^Mandel
 ^MYMETA\.
-cover_db
+^local/
+^cover_db
+^MANIFEST.bak
+^README.pod

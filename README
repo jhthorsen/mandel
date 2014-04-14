@@ -2,7 +2,7 @@ NAME
     Mandel - Async model layer for MongoDB objects using Mango
 
 VERSION
-    0.16
+    0.17
 
 SYNOPSIS
       # create your custom model class
@@ -143,8 +143,8 @@ METHODS
       $self->initialize(\%args);
 
     Takes a list of document names. Calls the "initialize" in
-    Mango::Document method on any document given as input. @names default to
-    "all_document_names" unless specified.
+    Mandel::Document method on any document given as input. @names default
+    to "all_document_names" unless specified.
 
     %args defaults to empty hash ref, unless specified as input.
 

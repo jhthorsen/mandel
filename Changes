@@ -1,5 +1,8 @@
 Revision history for Mandel
 
+0.17     Mon Apr 14 17:14:45 2014
+       * Improved DEBUG mode.
+
 0.16     Sat Mar 22 13:48:14 2014
        * Change use Mandel; will be deprecated
        * Fix annoying perl warning on "use Mandel"
