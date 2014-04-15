@@ -17,10 +17,23 @@ class, if this argument contains "::".
 
   package MyModel::Person;
   use Mandel::Document "some_collection_name";
+  use Types::Standard 'Str';
+
+  field "foo";
+
+  field "foo" => (
+    isa => Str,
+    builder => sub {
+      my $self = shift;
+      return "default value";
+    },
+  );
+
 
 Spell out the options with a list:
 
   package MyModel::Person;
+
   use Mandel::Document (
     extends => "My::Document::Class",
     collection_name => "some_collection_name",

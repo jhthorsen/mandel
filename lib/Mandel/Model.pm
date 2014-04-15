@@ -105,19 +105,28 @@ sub _add_field {
   for my $name (@{ ref $fields eq 'ARRAY' ? $fields : [$fields] }) {
     local $meta->{name} = $name;
     my $field = Mandel::Model::Field->new($meta);
+    my $builder = $field->builder;
     my $code = "";
 
     $code .= "package $class;\nsub $name {\n my \$raw = \$_[0]->data;\n";
-    $code .= "return \$raw->{'$name'} if \@_ == 1;\n";
+
+    if($builder) {
+      $code .= "return exists \$raw->{'$name'} ? (\$raw->{'$name'}) : (\$raw->{'$name'} = \$_[0]->\$builder) if \@_ == 1;\n";
+    }
+    else {
+      $code .= "return \$raw->{'$name'} if \@_ == 1;\n";
+    }
+
     $code .= "local \$_ = \$_[1];\n";
     $code .= $self->_field_type($meta->{isa}) if $meta->{isa};
     $code .= "\$_[0]->{dirty}{$name} = 1;";
     $code .= "\$raw->{'$name'} = \$_;\n";
     $code .= "return \$_[0];\n}";
+
     # We compile custom attribute code for speed
     no strict 'refs';
     warn "-- Attribute $name in $class\n$code\n\n" if $ENV{MOJO_BASE_DEBUG};
-    Carp::croak "Mandel::Document error: $@" unless eval "$code;1";
+    Carp::croak "Mandel::Document error: $@ ($code)" unless eval "$code;1";
 
     push @{ $self->{fields} }, $field;
   }
