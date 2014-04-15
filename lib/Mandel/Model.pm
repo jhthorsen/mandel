@@ -105,14 +105,20 @@ sub _add_field {
   for my $name (@{ ref $fields eq 'ARRAY' ? $fields : [$fields] }) {
     local $meta->{name} = $name;
     my $field = Mandel::Model::Field->new($meta);
+    my $check_and_coerce = $meta->{isa} ? $self->_check_and_coerce($meta->{isa}) : undef;
     my $code = "";
 
     $code .= "package $class;\nsub $name {\n my \$raw = \$_[0]->data;\n";
     $code .= "return \$raw->{'$name'} if \@_ == 1;\n";
-    $code .= "local \$_ = \$_[1];\n";
-    $code .= $self->_field_type($meta->{isa}) if $meta->{isa};
     $code .= "\$_[0]->{dirty}{$name} = 1;";
-    $code .= "\$raw->{'$name'} = \$_;\n";
+
+    if($check_and_coerce) {
+      $code .= "\$raw->{'$name'} = \$check_and_coerce->(\$_[1]);\n";
+    }
+    else {
+      $code .= "\$raw->{'$name'} = \$_[1];\n";
+    }
+
     $code .= "return \$_[0];\n}";
     # We compile custom attribute code for speed
     no strict 'refs';
@@ -138,20 +144,28 @@ sub fields {
   @{ $_[0]->{fields} || [] };
 }
 
-sub _field_type {
+sub _check_and_coerce {
   my($self, $type) = @_;
-  my $code = "";
+  my $coercion = $type->has_coercion ? $type->coercion : undef;
+  my $err;
 
   use Types::Standard qw( Num );
 
-  if($type->can_be_inlined) {
-    $code .= $type->inline_assert('$_');
-  }
   if($type->is_a_type_of(Num)) {
-    $code .= "\$_ += 0;\n";
+    if($coercion) {
+      return sub { 0 + ($type->check($_[0]) ? $_[0] : $coercion->assert_coerce($_[0])); };
+    }
+    else {
+      return sub { $type->assert_valid($_[0]); $_[0] + 0; };
+    }
   }
 
-  return $code;
+  if($coercion) {
+    return sub { $type->check($_[0]) ? $_[0] : $coercion->assert_coerce($_[0]); };
+  }
+  else {
+    return sub { $type->assert_valid($_[0]); $_[0] };
+  }
 }
 
 =head2 relationship
