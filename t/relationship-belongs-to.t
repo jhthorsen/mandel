@@ -15,7 +15,7 @@ my $oid = bson_oid;
 is $doc->person($oid), $doc, 'belongs_to with oid returns self';
 is_deeply(
   $doc->data->{person},
-  { '$ref' => 'person', '$id' => $oid },
+  { '$ref' => 'persons', '$id' => $oid },
   'data.person == oid'
 );
 

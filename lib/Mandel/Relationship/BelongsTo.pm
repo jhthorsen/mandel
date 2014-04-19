@@ -6,31 +6,67 @@ Mandel::Relationship::BelongsTo - A document is owned by another mongodb documen
 
 =head1 DESCRIPTION
 
-Using DSL from L<Mandel::Document>:
+L<Mandel::Relationship::BelongsTo> is a class used to describe the relationship
+between one document that belongs to another document. The connection
+between the documents is described in the database using
+L<DBRef|http://docs.mongodb.org/manual/reference/database-references/>.
+
+=head1 DATABASE STRUCTURE
+
+A "cat" that I<belongs to> a "person" will look like this in the database:
+
+  mongodb# db.persons.find();
+  { "_id" : ObjectId("5352abb0c5483e591a010000") }
+
+  mongodb# db.cats.find({ "person.$id": ObjectId("5352abb0c5483e591a010000") })
+  {
+    "_id" : ObjectId("5352abb0c5483e591a020000"),
+    "person" : DBRef("persons", ObjectId("5352abb0c5483e591a010000"))
+  }
+
+=head1 SYNOPSIS
+
+=head2 Using DSL
 
   package MyModel::Cat;
   use Mandel::Document;
   belongs_to owner => 'MyModel::Person';
 
-Using object oriented interface:
+=head2 Using object oriented interface
 
   MyModel::Cat
     ->model
     ->relationship(belongs_to => owner => 'MyModel::Person');
 
-Will add:
+See also L<Mandel::Model/relationship>.
 
-  $cat = MyModel::Cat->new->owner(\%args, $cb);
-  $cat = MyModel::Cat->new->owner($person_obj, $cb);
+=head2 Methods generated
 
+  # non-blocking set
+  $cat = MyModel::Cat->new->owner(\%args, sub {
+           my($cat, $err, $person_obj) = @_;
+           # ...
+         });
+
+  $cat = MyModel::Cat->new->owner($person_obj, sub {
+           my($cat, $err, $person_obj) = @_;
+           # ...
+         });
+
+  # non-blocking get
+  $cat = MyModel::Cat->new->owner(sub {
+           my($cat, $err, $person_obj) = @_;
+           # ...
+         });
+
+
+  # blocking set
   $person_obj = MyModel::Cat->new->owner(\%args);
   $person_obj = MyModel::Cat->new->owner($person_obj);
-  $cat = MyModel::Cat->new->owner($bson_oid);
+  $person_obj = MyModel::Cat->new->owner($bson_oid);
 
+  # blocking get
   $person = MyModel::Cat->new->owner;
-  $self = MyModel::Cat->new->owner(sub { my($self, $err, $person) = @_; });
-
-See also L<Mandel::Model/relationship>.
 
 =cut
 
@@ -39,6 +75,9 @@ use Mojo::Util;
 use Mango::BSON 'bson_dbref';
 
 =head1 ATTRIBUTES
+
+L<Mandel::Relationship::BelongsTo> inherits all attributes from
+L<Mandel::Relationship> and implements the following new ones.
 
 =head2 foreign_field
 
@@ -49,6 +88,9 @@ The name of the field in this class which hold the "_id" to the related doc.
 has foreign_field => sub { shift->accessor };
 
 =head1 METHODS
+
+L<Mandel::Relationship::BelongsTo> inherits all methods from
+L<Mandel::Relationship> and implements the following new ones.
 
 =head2 monkey_patch
 
@@ -69,13 +111,14 @@ sub monkey_patch {
     
     if($obj) { # set ===========================================================
       if(UNIVERSAL::isa($obj, 'Mango::BSON::ObjectID')) {
-        $doc->data->{$foreign_field} = bson_dbref $related_model->name, $obj;
+        $doc->data->{$foreign_field} = bson_dbref $related_model->collection_name, $obj;
         return $doc;
       }
       if(ref $obj eq 'HASH') {
         $obj = $related_collection->create($obj);
       }
-      $doc->data->{$foreign_field} = bson_dbref $related_model->name, $obj->id;
+
+      $doc->data->{$foreign_field} = bson_dbref $related_model->collection_name, $obj->id;
       
       # Blocking
       unless ($cb) {

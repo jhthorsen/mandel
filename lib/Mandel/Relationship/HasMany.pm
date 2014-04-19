@@ -6,34 +6,73 @@ Mandel::Relationship::HasMany - A field relates to many other mongodb document
 
 =head1 DESCRIPTION
 
-Using DSL from L<Mandel::Document>:
+L<Mandel::Relationship::HasMany> is a class used to describe the relationship
+between one document that has a relationship to many other documents.
+The connection between the documents is described in the database using
+L<DBRef|http://docs.mongodb.org/manual/reference/database-references/>.
 
-  package MyModel::Cat;
+=head1 DATABASE STRUCTURE
+
+A "person" that I<has many> "cats" will look like this in the database:
+
+  mongodb# db.persons.find();
+  { "_id" : ObjectId("53529f28c5483e4977020000") }
+
+  mongodb# db.cats.find({ "person.$id": ObjectId("53529f28c5483e4977020000") })
+  {
+    "_id" : ObjectId("53529f28c5483e5077040000"),
+    "person" : DBRef("persons", ObjectId("53529f28c5483e4977020000"))
+  }
+  {
+    "_id" : ObjectId("6432574384483e4978010000"),
+    "person" : DBRef("persons", ObjectId("53529f28c5483e4977020000"))
+  }
+
+A "has many" on one side is L<Mandel::Relationship::BelongsTo> on the other
+side.
+
+=head1 SYNOPSIS
+
+=head2 Using DSL
+
+  package MyModel::Person;
   use Mandel::Document;
-  has_many owners => 'MyModel::Person';
+  has_many cats => 'MyModel::Cat';
 
-Using object oriented interface:
+=head2 Using object oriented interface
 
-  MyModel::Cat
-    ->model
-    ->relationship(has_many => owners => 'MyModel::Person');
-
-Will add:
-
-  $cat = MyModel::Cat->new->add_owners(\%args, $cb);
-  $cat = MyModel::Cat->new->add_owners($person_obj, $cb);
-
-  $person_obj = MyModel::Cat->new->add_owners(\%args);
-  $person_obj = MyModel::Cat->new->add_owners($person_obj);
-
-  $persons = MyModel::Cat->new->search_owners;
-
-  $person_objs = MyModel::Cat->new->owners;
-  $self = MyModel::Cat->new->owners(sub {
-    my($self, $err, $person_objs) = @_;
-  });
+  MyModel::Person->model->relationship(
+    "has_many",
+    "cats",
+    "MyModel::Cat",
+  );
 
 See also L<Mandel::Model/relationship>.
+
+=head2 Methods generated
+
+  # non-blocking
+  $person = MyModel::Person->new->add_cats(\%constructor_args, sub {
+              my($person, $err, $cat_obj) = @_;
+              # ...
+            });
+
+  $person = MyModel::Person->new->add_cats($cat_obj, sub {
+              my($person, $err, $cat_obj) = @_;
+              # ...
+            });
+
+  $person = MyModel::Cat->new->cats(sub {
+              my($self, $err, $array_of_cats) = @_;
+              # ...
+            });
+
+  # blocking
+  $cat_obj = MyModel::Person->new->add_cats(\%args);
+  $cat_obj = MyModel::Person->new->add_cats($cat_obj);
+  $array_of_cats = MyModel::Person->new->cats;
+
+  $cat_collection = MyModel::Person->new->search_cats;
 
 =cut
 
@@ -43,9 +82,12 @@ use Mango::BSON 'bson_dbref';
 
 =head1 ATTRIBUTES
 
+L<Mandel::Relationship::HasMany> inherits all attributes from
+L<Mandel::Relationship> and implements the following new ones.
+
 =head2 add_method_name
 
-The name of the method used to add another document to the .
+The name of the method used to add another document to the relationship.
 
 =head2 search_method_name
 
@@ -57,6 +99,9 @@ has add_method_name => sub { sprintf 'add_%s', shift->accessor };
 has search_method_name => sub { sprintf 'search_%s', shift->accessor };
 
 =head1 METHODS
+
+L<Mandel::Relationship::HasMany> inherits all methods from
+L<Mandel::Relationship> and implements the following new ones.
 
 =head2 monkey_patch
 
@@ -99,12 +144,12 @@ sub _monkey_patch_add_method {
 
   Mojo::Util::monkey_patch($self->document_class, $self->add_method_name, sub {
     my($doc, $obj, $cb) = @_;
-    my $related_model = $self->_related_model;
 
     if(ref $obj eq 'HASH') {
-      $obj = $related_model->new_collection($doc->connection)->create($obj);
+      $obj = $self->_related_model->new_collection($doc->connection)->create($obj);
     }
-    $obj->data->{$foreign_field} = bson_dbref $related_model->name, $doc->id;
+
+    $obj->data->{$foreign_field} = bson_dbref $doc->model->collection_name, $doc->id;
 
     # Blocking
     unless ($cb) {

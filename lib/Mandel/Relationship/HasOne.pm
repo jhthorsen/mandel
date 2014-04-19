@@ -6,28 +6,50 @@ Mandel::Relationship::HasOne - A field relates to another mongodb document
 
 =head1 DESCRIPTION
 
-Using DSL from L<Mandel::Document>:
+L<Mandel::Relationship::HasOne> is a class used to describe the relationship
+between one document that has a relationship to one other documents.
+The connection between the documents is described in the database using
+L<DBRef|http://docs.mongodb.org/manual/reference/database-references/>.
 
-  package MyModel::Cat;
+=head1 DATABASE STRUCTURE
+
+A "dinosaur" that I<has one> "cat" will look like this in the database:
+
+  mongodb# db.dinosaurs.find({ })
+  { "_id" : ObjectId("5352b4d8c5483e4502010000") }
+
+  mongodb# db.cats.find({ "dinosaur.$id": ObjectId("53529f28c5483e4977020000") })
+  {
+    "_id" : ObjectId("5352b4d8c5483e4502040000"),
+    "dinosaur" : DBRef("dinosaurs", ObjectId("5352b4d8c5483e4502010000"))
+  }
+
+=head1 SYNOPSIS
+
+=head2 Using DSL
+
+  package MyModel::Dinosaur;
   use Mandel::Document;
-  has_one owner => 'MyModel::Person';
+  has_one cat => 'MyModel::Cat';
 
-Using object oriented interface:
+=head2 Using object oriented interface
 
-  MyModel::Cat
-    ->model
-    ->relationship(has_one => owner => 'MyModel::Person');
+  MyModel::Dinosaur->model->relationship(
+    "has_one",
+    "cat",
+    "MyModel::Cat",
+  );
 
-Will add:
+=head2 Methods generated
 
-  $cat = MyModel::Cat->new->owner(\%args, $cb);
-  $cat = MyModel::Cat->new->owner($person_obj, $cb);
+  $cat = MyModel::Dinosaur->new->cat(\%args, $cb);
+  $cat = MyModel::Dinosaur->new->cat($person_obj, $cb);
 
-  $person_obj = MyModel::Cat->new->owner(\%args);
-  $person_obj = MyModel::Cat->new->owner($person_obj);
+  $person_obj = MyModel::Dinosaur->new->cat(\%args);
+  $person_obj = MyModel::Dinosaur->new->cat($person_obj);
 
-  $person = MyModel::Cat->new->owner;
-  $self = MyModel::Cat->new->owner(sub { my($self, $err, $person) = @_; });
+  $person = MyModel::Dinosaur->new->cat;
+  $self = MyModel::Dinosaur->new->cat(sub { my($self, $err, $person) = @_; });
 
 See also L<Mandel::Model/relationship>.
 
@@ -57,11 +79,11 @@ sub monkey_patch {
     my $related_collection = $related_model->new_collection($doc->connection);
     
     if($obj) { # set ===========================================================
-
       if(ref $obj eq 'HASH') {
         $obj = $related_collection->create($obj);
       }
-      $obj->data->{$foreign_field} = bson_dbref $related_model->name, $doc->id;
+
+      $obj->data->{$foreign_field} = bson_dbref $doc->model->collection_name, $doc->id;
       
       # Blocking
       unless ($cb) {
