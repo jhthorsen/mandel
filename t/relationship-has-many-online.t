@@ -1,7 +1,6 @@
 use t::Online;
 use Test::More;
 
-plan tests => 12;
 my $connection = t::Online->mandel;
 my $person = $connection->collection('person')->create({});
 ok !$person->in_storage, 'person not in_storage';
@@ -47,15 +46,19 @@ ok !$person->in_storage, 'person not in_storage';
 
   # Non-blocking
   $person->cats(sub {
-    my($person, $err, $cats) = @_;
-    ok !$err, 'no error';
+    (undef, $err, $cats) = @_;
     Mojo::IOLoop->stop;
   });
   Mojo::IOLoop->start;
 
+  ok !$err, 'no error';
+  is scalar(grep { ref($_) =~ /::Cat$/; } @$cats), 2, 'found two cats';
+
   # Blocking
   is ref $person->cats, 'ARRAY', 'array cat docs';
-  
+  ok $person->cats->[0], 'found a cat';
 }
 
 $connection->storage->db->command(dropDatabase => 1);
+
+done_testing;
