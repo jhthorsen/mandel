@@ -59,6 +59,6 @@ ok !$person->in_storage, 'person not in_storage';
   ok $person->cats->[0], 'found a cat';
 }
 
-$connection->storage->db->command(dropDatabase => 1);
+#$connection->storage->db->command(dropDatabase => 1);
 
 done_testing;

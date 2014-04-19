@@ -14,9 +14,11 @@ Using DSL from L<Mandel::Document>:
 
 Using object oriented interface:
 
-  MyModel::Cat
-    ->model
-    ->relationship(has_many => owners => 'MyModel::Person');
+  MyModel::Cat->model->relationship(
+    "has_many",
+    "owners",
+    "MyModel::Person",
+  );
 
 Will add:
 
@@ -34,6 +36,19 @@ Will add:
   });
 
 See also L<Mandel::Model/relationship>.
+
+=head2 Database structure
+
+In the database it will look like this:
+
+  mongodb# db.persons.find();
+  { "_id" : ObjectId("53529f28c5483e4977020000") }
+
+  mongodb# db.cats.find();
+  {
+    "_id" : ObjectId("53529f28c5483e4977010000"),
+    "person" : DBRef("cat", ObjectId("53529f28c5483e4977020000"))
+  }
 
 =cut
 
