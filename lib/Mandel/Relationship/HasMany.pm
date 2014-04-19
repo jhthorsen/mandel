@@ -7,8 +7,8 @@ Mandel::Relationship::HasMany - A field relates to many other mongodb document
 =head1 DESCRIPTION
 
 L<Mandel::Relationship::HasMany> is a class used to describe the relationship
-between one document that is connected to many other documents. The connection
-between the documents is described in the database using
+between one document that has a relationship to many other documents.
+The connection between the documents is described in the database using
 L<DBRef|http://docs.mongodb.org/manual/reference/database-references/>.
 
 =head1 DATABASE STRUCTURE
@@ -28,6 +28,9 @@ A "person" that I<has many> "cats" will look like this in the database:
     "person" : DBRef("persons", ObjectId("53529f28c5483e4977020000"))
   }
 
+A "has many" on one side is L<Mandel::Relationship::BelongsTo> on the other
+side.
+
 =head1 SYNOPSIS
 
 =head2 Using DSL
@@ -44,6 +47,8 @@ A "person" that I<has many> "cats" will look like this in the database:
     "MyModel::Cat",
   );
 
+See also L<Mandel::Model/relationship>.
+
 =head2 Methods generated
 
   # non-blocking
@@ -52,7 +57,7 @@ A "person" that I<has many> "cats" will look like this in the database:
               # ...
             });
 
-  $person = MyModel::Person->new->add_cats($cat_obj, $cb);
+  $person = MyModel::Person->new->add_cats($cat_obj, sub {
               my($person, $err, $cat_obj) = @_;
               # ...
             });
@@ -69,8 +74,6 @@ A "person" that I<has many> "cats" will look like this in the database:
 
   $cat_collection = MyModel::Person->new->search_cats;
 
-See also L<Mandel::Model/relationship>.
-
 =cut
 
 use Mojo::Base 'Mandel::Relationship';
@@ -79,9 +82,12 @@ use Mango::BSON 'bson_dbref';
 
 =head1 ATTRIBUTES
 
+L<Mandel::Relationship::HasMany> inherits all attributes from
+L<Mandel::Relationship> and implements the following new ones.
+
 =head2 add_method_name
 
-The name of the method used to add another document to the .
+The name of the method used to add another document to the relationship.
 
 =head2 search_method_name
 
@@ -93,6 +99,9 @@ has add_method_name => sub { sprintf 'add_%s', shift->accessor };
 has search_method_name => sub { sprintf 'search_%s', shift->accessor };
 
 =head1 METHODS
+
+L<Mandel::Relationship::HasMany> inherits all methods from
+L<Mandel::Relationship> and implements the following new ones.
 
 =head2 monkey_patch
 
@@ -140,7 +149,7 @@ sub _monkey_patch_add_method {
       $obj = $self->_related_model->new_collection($doc->connection)->create($obj);
     }
 
-    $obj->data->{$foreign_field} = bson_dbref $doc->model->name, $doc->id;
+    $obj->data->{$foreign_field} = bson_dbref $doc->model->collection_name, $doc->id;
 
     # Blocking
     unless ($cb) {

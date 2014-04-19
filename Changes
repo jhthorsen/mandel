@@ -1,5 +1,8 @@
 Revision history for Mandel
 
+0.18
+       * Fix DBRef in database: "$ref" did not have the right collection name
+
 0.17     Mon Apr 14 17:14:45 2014
        * Improved DEBUG mode.
 

@@ -1,51 +1,46 @@
 use t::Online;
 use Test::More;
 
-plan tests => 10;
 my $connection = t::Online->mandel;
 my $name = rand;
-
-{
-  my $person = $connection->collection('person')->create({});
-  my $id;
-
-  ## add_father
-  
-  # Non-blocking
-  ok !$person->in_storage, 'person not in_storage';
-  $person->father({ name => $name }, sub {
-    my($person, $err, $father) = @_;
-    ok !$err, 'no error';
-    ok $father->in_storage, 'father in_storage';
-    ok $person->in_storage, 'person in_storage';
-    $id = $father->id;
-    Mojo::IOLoop->stop;
-  });
-  Mojo::IOLoop->start;
-
-  $person->father({ name => $name }, sub {
-    my($person, $err, $father) = @_;
-    isnt $father->id, $id, 'replaced father';
-    $id = $father->id;
-    Mojo::IOLoop->stop;
-  });
-  Mojo::IOLoop->start;
-
-  $connection->collection('person')->count(sub {
-    my($cats, $err, $n) = @_;
-    is $n, 2, 'two persons in the database';
-    Mojo::IOLoop->stop;
-  });
-  Mojo::IOLoop->start;
-  
-  # Blocking
-  ok $person->father, 'got father';
-  isnt $person, $person->father, 'invocant doc';
-  $person->father({ name => $name });
-  ok $person->father->in_storage, 'father in_storage';
-  isnt $person->father->id, $id, 'replaced father';
-  
-
-}
+my($cat, $err, $id, $n);
 
 $connection->storage->db->command(dropDatabase => 1);
+
+{
+  my $dinosaur = $connection->collection('dinosaur')->create({});
+
+  ## add_cat
+  
+  # Non-blocking
+  ok !$dinosaur->in_storage, 'dinosaur not in_storage';
+  $dinosaur->cat({ name => $name }, sub { (undef, $err, $cat) = @_; Mojo::IOLoop->stop; });
+  Mojo::IOLoop->start;
+  ok !$err, 'no error';
+  ok $cat->in_storage, 'cat in_storage';
+  ok $dinosaur->in_storage, 'dinosaur in_storage';
+  $id = $cat->id;
+
+  $dinosaur->cat({ name => $name }, sub { (undef, $err, $cat) = @_; Mojo::IOLoop->stop; });
+  Mojo::IOLoop->start;
+  isnt $cat->id, $id, 'replaced cat';
+  $id = $cat->id;
+
+  $connection->collection('dinosaur')->count(sub { (undef, $err, $n) = @_; Mojo::IOLoop->stop; });
+  Mojo::IOLoop->start;
+  is $n, 1, 'one dinosaur in the database';
+  
+  $n = $connection->collection('cat')->count;
+  is $n, 1, 'one cat in the database';
+ 
+  # Blocking
+  ok $dinosaur->cat, 'got cat';
+  isnt $dinosaur, $dinosaur->cat, 'invocant doc';
+  $dinosaur->cat({ name => $name });
+  ok $dinosaur->cat->in_storage, 'cat in_storage';
+  isnt $dinosaur->cat->id, $id, 'replaced cat';
+}
+
+$connection->storage->db->command(dropDatabase => 1) unless $ENV{KEEP_DATABASE};
+
+done_testing;
