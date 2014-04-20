@@ -86,14 +86,8 @@ object.
 sub field {
   my($self, $name, $meta) = @_;
 
-  if($meta) {
-    return $self->_add_field($name => $meta); # $name might be an array-ref
-  }
-
-  for(@{ $self->{fields} || [] }) {
-    return $_ if $name eq $_->name;
-  }
-
+  return $self->_add_field($name => $meta) if $meta; # $name might be an array-ref
+  return grep { $name eq $_->name } @{ $self->{fields} || [] };
   return;
 }
 
