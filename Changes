@@ -1,5 +1,9 @@
 Revision history for Mandel
 
+0.18
+       * Add "builder" support to field.
+       * Remove "_build_data" from documentation.
+
 0.17     Mon Apr 14 17:14:45 2014
        * Improved DEBUG mode.
 

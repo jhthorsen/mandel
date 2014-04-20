@@ -17,10 +17,23 @@ class, if this argument contains "::".
 
   package MyModel::Person;
   use Mandel::Document "some_collection_name";
+  use Types::Standard 'Str';
+
+  field "foo";
+
+  field "foo" => (
+    isa => Str,
+    builder => sub {
+      my $self = shift;
+      return "default value";
+    },
+  );
+
 
 Spell out the options with a list:
 
   package MyModel::Person;
+
   use Mandel::Document (
     extends => "My::Document::Class",
     collection_name => "some_collection_name",
@@ -98,13 +111,12 @@ sub id {
 
 =head2 data
 
-Holds the raw mongodb document. It is possible to define default values for
-this attribute by defining a C<_build_data()> method in the sub class. Example:
+  $hash = $self->data;
+  $self = $self->data($hash);
 
-  sub _build_data {
-    my $self = shift;
-    return { age => 0, name => '' };
-  }
+Holds the raw mongodb document. It is possible to define default values for
+this attribute by defining L<builder|Mandel::Model::Field/builder> for the
+fields.
 
 =head2 in_storage
 
