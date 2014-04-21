@@ -310,6 +310,10 @@ sub _storage_collection {
 
 L<Mojolicious>, L<Mango>
 
+Still got MongoDB 2.4 on Ubuntu? Check out
+L<http://docs.mongodb.org/manual/tutorial/install-mongodb-on-ubuntu/>
+to upgrade.
+
 =head1 SOURCE REPOSITORY
 
 L<http://github.com/jhthorsen/mandel>
