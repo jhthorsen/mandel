@@ -11,6 +11,8 @@ where one document has a list of DBRefs that point to other documents.
 The connection between the documents is described in the database using
 L<DBRef|http://docs.mongodb.org/manual/reference/database-references/>.
 
+This relationship is EXPERIMENTAL. Let me of you are using it or don't like it.
+
 =head1 DATABASE STRUCTURE
 
 A "person" that has I<list of> "cats" will look like this in the database:

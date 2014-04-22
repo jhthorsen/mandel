@@ -1,5 +1,8 @@
 Revision history for Mandel
 
+0.18     Tue Apr 22 07:44:14 2014
+       * Add EXPERIMENTAL ListOf relationship
+
 0.17     Mon Apr 14 17:14:45 2014
        * Improved DEBUG mode.
 

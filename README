@@ -2,7 +2,7 @@ NAME
     Mandel - Async model layer for MongoDB objects using Mango
 
 VERSION
-    0.17
+    0.18
 
 SYNOPSIS
       # create your custom model class
@@ -157,6 +157,10 @@ METHODS
 
 SEE ALSO
     Mojolicious, Mango
+
+    Still got MongoDB 2.4 on Ubuntu? Check out
+    <http://docs.mongodb.org/manual/tutorial/install-mongodb-on-ubuntu/> to
+    upgrade.
 
 SOURCE REPOSITORY
     <http://github.com/jhthorsen/mandel>
