@@ -1,6 +1,6 @@
 Revision history for Mandel
 
-0.19
+0.19     Sat Apr 26 18:28:58 2014
        * Fix DBRef in database: "$ref" did not have the right collection name
 
 0.18     Tue Apr 22 07:44:14 2014
