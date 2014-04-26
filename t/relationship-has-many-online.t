@@ -3,6 +3,9 @@ use Test::More;
 
 my $connection = t::Online->mandel;
 my $person = $connection->collection('person')->create({});
+
+$connection->storage->db->command(dropDatabase => 1);
+
 ok !$person->in_storage, 'person not in_storage';
 
 {
@@ -59,6 +62,6 @@ ok !$person->in_storage, 'person not in_storage';
   ok $person->cats->[0], 'found a cat';
 }
 
-$connection->storage->db->command(dropDatabase => 1);
+$connection->storage->db->command(dropDatabase => 1) unless $ENV{KEEP_DATABASE};
 
 done_testing;

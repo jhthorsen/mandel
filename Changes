@@ -1,5 +1,8 @@
 Revision history for Mandel
 
+0.19
+       * Fix DBRef in database: "$ref" did not have the right collection name
+
 0.18     Tue Apr 22 07:44:14 2014
        * Add EXPERIMENTAL ListOf relationship
 

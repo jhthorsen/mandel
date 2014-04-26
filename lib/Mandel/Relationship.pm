@@ -6,7 +6,11 @@ Mandel::Relationship - Base class for relationships
 
 =head1 DESCRIPTION
 
+L<Mandel::Relationship> is the base class for the following classes:
+
 =over 4
+
+=item * L<Mandel::Relationship::BelongsTo>
 
 =item * L<Mandel::Relationship::HasMany>
 
@@ -29,7 +33,7 @@ Base name of accessor(s) created.
 
 =head2 foreign_field
 
-The name of the field in the foreign class which hold the "_id" back.
+The name of the field in the foreign class which hold the "_id".
 
 =head2 document_class
 
