@@ -407,6 +407,7 @@ sub import {
   monkey_patch $caller, field => sub { $model->field(shift, { @_ }) };
   monkey_patch $caller, has_many => sub { $model->relationship(has_many => @_)->monkey_patch };
   monkey_patch $caller, has_one => sub { $model->relationship(has_one => @_)->monkey_patch };
+  monkey_patch $caller, list_of => sub { $model->relationship(list_of => @_)->monkey_patch };
   monkey_patch $caller, model => sub { $model };
 
   @_ = ($class, $base_class);
