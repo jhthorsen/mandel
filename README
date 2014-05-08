@@ -2,7 +2,7 @@ NAME
     Mandel - Async model layer for MongoDB objects using Mango
 
 VERSION
-    0.19
+    0.20
 
 SYNOPSIS
       # create your custom model class
@@ -14,7 +14,7 @@ SYNOPSIS
       package MyModel::Cat;
       use Mandel::Document;
       use Types::Standard 'Str';
-      field name => ( isa => Str );
+      field name => ( isa => Str, builder => sub { "value" } );
       field 'type';
       belongs_to person => 'MyModel::Person';
       1;

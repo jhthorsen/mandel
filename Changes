@@ -1,6 +1,6 @@
 Revision history for Mandel
 
-0.20
+0.20     Thu May  8 19:26:11 2014
        * Add "builder" support to field.
        * Remove "_build_data" from documentation.
 
