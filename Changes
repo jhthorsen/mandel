@@ -1,5 +1,9 @@
 Revision history for Mandel
 
+0.20
+       * Add "builder" support to field.
+       * Remove "_build_data" from documentation.
+
 0.19     Sat Apr 26 18:28:58 2014
        * Fix DBRef in database: "$ref" did not have the right collection name
 

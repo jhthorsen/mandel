@@ -19,7 +19,7 @@ Mandel - Async model layer for MongoDB objects using Mango
   package MyModel::Cat;
   use Mandel::Document;
   use Types::Standard 'Str';
-  field name => ( isa => Str );
+  field name => ( isa => Str, builder => sub { "value" } );
   field 'type';
   belongs_to person => 'MyModel::Person';
   1;
