@@ -91,7 +91,7 @@ sub monkey_patch {
         $related_collection->search({ sprintf('%s.$id', $foreign_field), $doc->id })->remove();
         $obj->save;
         $doc->save;
-        $obj->cache($accessor => $doc);
+        $doc->_cache($accessor => $obj);
         return $doc;
       }
 
@@ -110,13 +110,22 @@ sub monkey_patch {
         sub {
           my($delay, $o_err, $d_err) = @_;
           my $err = $o_err || $d_err;
-          $obj->cache($accessor => $doc) unless $err;
+          $doc->_cache($accessor => $obj) unless $err;
           $doc->$cb($err, $obj);
         },
       );
     }
     else { # get =============================================================
       my $cursor = $related_collection->search({ sprintf('%s.$id', $foreign_field), $doc->id });
+      my $cached = $doc->_cache($accessor);
+
+      # Cached non-blocking
+      if ($cached) {
+        $doc->$cb('', $cached);
+        return $self;
+      }
+
+
       return $cursor->single unless $cb;
       $cursor->single(sub { $doc->$cb(@_[1, 2]) });
     }

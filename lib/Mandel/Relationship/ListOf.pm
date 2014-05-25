@@ -165,14 +165,16 @@ sub _monkey_patch_all_method {
 
   Mojo::Util::monkey_patch($self->document_class, $self->accessor, sub {
     my($doc, $cb) = @_;
+    my $cached = $doc->_cache($accessor);
 
     # Blocking
     unless ($cb) {
+      return @$cached if $cached;
       my $objs = $doc->$search->all;
       my %lookup = map { $_->id, $_ } @$objs;
       my @objs = map { $lookup{$_->{'$id'}} } @{ $doc->data->{$accessor} || [] };
-      $doc->cache($accessor => \@objs);
-      return \@objs;
+      $doc->_cache($accessor => \@objs);
+      return @objs;
     }
 
     # Non-blocking
@@ -181,7 +183,7 @@ sub _monkey_patch_all_method {
       my %lookup = map { $_->id, $_ } @$objs;
       my @objs = map { $lookup{$_->{'$id'}} } @{ $doc->data->{$accessor} || [] };
 
-      $doc->cache($accessor => \@objs);
+      $doc->_cache($accessor => \@objs);
       $doc->$cb($err, \@objs);
     });
 
@@ -198,7 +200,7 @@ sub _monkey_patch_push_method {
   Mojo::Util::monkey_patch($self->document_class, $self->push_method_name, sub {
     my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
     my($doc, $obj, $pos) = @_;
-    my $cache = $obj->cache($accessor);
+    my $cached = $doc->_cache($accessor);
     my($dbref, $list, @update);
 
     if(ref $obj eq 'HASH') {
@@ -240,7 +242,7 @@ sub _monkey_patch_push_method {
         push @$list, $dbref;
       }
 
-      push @$cache, $doc if ref $cache eq 'ARRAY';
+      push @$cached, $obj if ref $cached eq 'ARRAY';
       return $obj;
     }
 
@@ -266,7 +268,7 @@ sub _monkey_patch_push_method {
           }
         }
 
-        push @$cache, $doc if !$err and ref $cache eq 'ARRAY';
+        push @$cached, $obj if !$err and ref $cached eq 'ARRAY';
         $doc->$cb($err // '', $obj);
       },
     );
@@ -283,7 +285,7 @@ sub _monkey_patch_remove_method {
 
   Mojo::Util::monkey_patch($self->document_class, $self->remove_method_name, sub {
     my($doc, $obj, $cb) = @_;
-    my $cache = $obj->cache($accessor);
+    my $cached = $doc->_cache($accessor);
     my @update;
 
     unless (UNIVERSAL::isa($obj, 'Mandel::Document')) {
@@ -303,7 +305,7 @@ sub _monkey_patch_remove_method {
     unless ($cb) {
       $doc->_storage_collection->update(@update);
       $doc->data->{$accessor} = [ grep { $_->{'$id'} ne $obj->id } @{ $doc->data->{$accessor} || [] } ];
-      @$cache = grep { $_->{'$id'} ne $obj->id } @$cache if ref $cache eq 'ARRAY';
+      @$cached = grep { $_->{'$id'} ne $obj->id } @$cached if ref $cached eq 'ARRAY';
       return $doc;
     }
 
@@ -316,7 +318,7 @@ sub _monkey_patch_remove_method {
       sub {
         my($delay, $err, $updated) = @_;
         $doc->data->{$accessor} = [ grep { $_->{'$id'} ne $obj->id } @{ $doc->data->{$accessor} || [] } ] unless $err;
-        @$cache = grep { $_->{'$id'} ne $obj->id } @$cache if !$err and ref $cache eq 'ARRAY';
+        @$cached = grep { $_->{'$id'} ne $obj->id } @$cached if !$err and ref $cached eq 'ARRAY';
         $doc->$cb($err);
       },
     );

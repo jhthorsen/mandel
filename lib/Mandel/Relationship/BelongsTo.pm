@@ -125,7 +125,7 @@ sub monkey_patch {
       unless ($cb) {
         $obj->save;
         $doc->save;
-        $obj->cache($accessor => $obj);
+        $doc->_cache($accessor => $obj);
         return $doc;
       }
 
@@ -139,15 +139,29 @@ sub monkey_patch {
         sub {
           my($delay, $o_err, $d_err) = @_;
           my $err = $o_err || $d_err;
-          $obj->cache($accessor => $obj) unless $err;
+          $doc->_cache($accessor => $obj) unless $err;
           $doc->$cb($err, $obj);
         },
       );
     }
+    elsif(my $cached = $doc->_cache($accessor)) { # get cached ===============
+      return $cached unless $cb;
+      $self->$cb('', $cached);
+    }
     else { # get =============================================================
       my $cursor = $related_collection->search({ _id => $doc->data->{$foreign_field}{'$id'} });
-      return $cursor->single unless $cb;
-      $cursor->single(sub { $doc->$cb(@_[1, 2]) });
+
+      unless($cb) {
+        my $obj = $cursor->single;
+        $doc->_cache($accessor => $obj);
+        return $obj;
+      }
+
+      $cursor->single(sub {
+        my($cursor, $err, $obj) = @_;
+        $doc->_cache($accessor => $obj);
+        $doc->$cb($err, $obj);
+      });
     }
 
     $doc;
