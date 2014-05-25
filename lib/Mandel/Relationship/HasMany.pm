@@ -119,16 +119,22 @@ sub monkey_patch {
 sub _monkey_patch_all_method {
   my $self = shift;
   my $search = $self->search_method_name;
+  my $accessor = $self->accessor;
 
   Mojo::Util::monkey_patch($self->document_class, $self->accessor, sub {
     my($doc, $cb) = @_;
 
     # Blocking
-    return $doc->$search->all unless $cb;
+    unless ($cb) {
+      my @objs = $doc->$search->all;
+      $doc->cache($accessor => \@objs);
+      return @objs;
+    }
 
     # Non-blocking
     $doc->$search->all(sub {
       my($collection, $err, $objs) = @_;
+      $doc->cache($accessor => $objs);
       $doc->$cb($err, $objs);
     });
 
@@ -141,9 +147,11 @@ sub _monkey_patch_all_method {
 sub _monkey_patch_add_method {
   my $self = shift;
   my $foreign_field = $self->foreign_field;
+  my $accessor = $self->accessor;
 
   Mojo::Util::monkey_patch($self->document_class, $self->add_method_name, sub {
     my($doc, $obj, $cb) = @_;
+    my $cache = $obj->cache($accessor);
 
     if(ref $obj eq 'HASH') {
       $obj = $self->_related_model->new_collection($doc->connection)->create($obj);
@@ -155,6 +163,7 @@ sub _monkey_patch_add_method {
     unless ($cb) {
       $obj->save;
       $doc->save;
+      push @$cache, $doc if ref $cache eq 'ARRAY';
       return $obj;
     }
 
@@ -168,6 +177,7 @@ sub _monkey_patch_add_method {
       sub {
         my($delay, $o_err, $d_err) = @_;
         my $err = $o_err || $d_err;
+        push @$cache, $doc if !$err and ref $cache eq 'ARRAY';
         $doc->$cb($err, $obj);
       },
     );

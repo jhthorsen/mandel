@@ -173,6 +173,27 @@ sub new {
   $self;
 }
 
+=head2 cache
+
+  $self = $self->cache(key => $value);
+  $value = $self->cache('key');
+  $hash = $self->cache;
+
+The cache method can be used to store retrieved data. This is automatically
+used in the relationships for storing the related objects.
+
+=cut
+
+sub cache {
+  my $self = shift;
+  my $cache = $self->{cache} ||= {};
+
+  return $cache unless @_; # Hash
+  return $cache->{$_[0]} unless @_ > 1 or ref $_[0]; # Get
+  %$cache = (%$cache, %{ref $_[0] ? $_[0] : {@_}}); # Set
+  return $self;
+}
+
 =head2 initialize
 
 A no-op placeholder useful for initialization. See L<Mandel/initialize>.
