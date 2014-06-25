@@ -426,8 +426,10 @@ sub import {
   my $model = Mandel::Model->new(document_class => $caller, %args);
   my $base_class = 'Mandel::Document';
 
-  if($args{name} and $args{name} =~ /::/) {
-    $base_class = delete $args{name};
+  for (qw/name extends/) { 
+    if($args{$_} and $args{$_} =~ /::/) {
+      $base_class = delete $args{$_};
+    }
   }
   if(!$args{name}) {
     $args{name} = Mojo::Util::decamelize(($caller =~ /(\w+)$/)[0]);
