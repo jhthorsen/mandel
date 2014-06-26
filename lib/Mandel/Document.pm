@@ -202,7 +202,7 @@ sub initialize { shift }
 
 =head2 contains
 
-  $bool = $self->get('/json/2/pointer');
+  $bool = $self->contains('/json/2/pointer');
 
 Use L<Mojo::JSON::Pointer/contains> to check if a value exists inside the raw
 mongodb document.
