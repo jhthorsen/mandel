@@ -1,5 +1,9 @@
 Revision history for Mandel
 
+0.22     Wed Sep 10 16:40:05 2014
+       * Fix missing dependencies
+       * Run perltidy on the codebase
+
 0.21     Wed Sep 10 15:50:50 2014
        * Fix document extends
          Contributor: Alexey Neyasov
