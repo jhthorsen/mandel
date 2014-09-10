@@ -99,56 +99,60 @@ Add methods to L<Mandel::Relationship/document_class>.
 =cut
 
 sub monkey_patch {
-  my $self = shift;
+  my $self          = shift;
   my $foreign_field = $self->foreign_field;
 
-  Mojo::Util::monkey_patch($self->document_class, $self->accessor, sub {
-    my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
-    my $doc = shift;
-    my $obj = shift;
-    my $related_model = $self->_related_model;
-    my $related_collection = $related_model->new_collection($doc->connection);
-    
-    if($obj) { # set ===========================================================
-      if(UNIVERSAL::isa($obj, 'Mango::BSON::ObjectID')) {
-        $doc->data->{$foreign_field} = bson_dbref $related_model->collection_name, $obj;
-        return $doc;
+  Mojo::Util::monkey_patch(
+    $self->document_class,
+    $self->accessor,
+    sub {
+      my $cb                 = ref $_[-1] eq 'CODE' ? pop : undef;
+      my $doc                = shift;
+      my $obj                = shift;
+      my $related_model      = $self->_related_model;
+      my $related_collection = $related_model->new_collection($doc->connection);
+
+      if ($obj) {    # set ===========================================================
+        if (UNIVERSAL::isa($obj, 'Mango::BSON::ObjectID')) {
+          $doc->data->{$foreign_field} = bson_dbref $related_model->collection_name, $obj;
+          return $doc;
+        }
+        if (ref $obj eq 'HASH') {
+          $obj = $related_collection->create($obj);
+        }
+
+        $doc->data->{$foreign_field} = bson_dbref $related_model->collection_name, $obj->id;
+
+        # Blocking
+        unless ($cb) {
+          $obj->save;
+          $doc->save;
+          return $doc;
+        }
+
+        # Non-blocking
+        Mojo::IOLoop->delay(
+          sub {
+            my ($delay) = @_;
+            $obj->save($delay->begin);
+            $doc->save($delay->begin);
+          },
+          sub {
+            my ($delay, $o_err, $d_err) = @_;
+            my $err = $o_err || $d_err;
+            $doc->$cb($err, $obj);
+          },
+        );
       }
-      if(ref $obj eq 'HASH') {
-        $obj = $related_collection->create($obj);
+      else {    # get =============================================================
+        my $cursor = $related_collection->search({_id => $doc->data->{$foreign_field}{'$id'}});
+        return $cursor->single unless $cb;
+        $cursor->single(sub { $doc->$cb(@_[1, 2]) });
       }
 
-      $doc->data->{$foreign_field} = bson_dbref $related_model->collection_name, $obj->id;
-      
-      # Blocking
-      unless ($cb) {
-        $obj->save;
-        $doc->save;
-        return $doc;
-      }
-
-      # Non-blocking
-      Mojo::IOLoop->delay(
-        sub {
-          my($delay) = @_;
-          $obj->save($delay->begin);
-          $doc->save($delay->begin);
-        },
-        sub {
-          my($delay, $o_err, $d_err) = @_;
-          my $err = $o_err || $d_err;
-          $doc->$cb($err, $obj);
-        },
-      );
+      $doc;
     }
-    else { # get =============================================================
-      my $cursor = $related_collection->search({ _id => $doc->data->{$foreign_field}{'$id'} });
-      return $cursor->single unless $cb;
-      $cursor->single(sub { $doc->$cb(@_[1, 2]) });
-    }
-
-    $doc;
-  });
+  );
 
   return $self;
 }

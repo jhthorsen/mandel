@@ -6,7 +6,7 @@ my $connection = Mandel->new;
 
 {
   my $person = $connection->model(person => {})->model('person');
-  my $cat = $connection->model(cat => {})->model('cat');
+  my $cat    = $connection->model(cat    => {})->model('cat');
 
   ok !$person->document_class->can('cat'), 'person cannot cat()';
 
@@ -15,7 +15,7 @@ my $connection = Mandel->new;
 }
 
 {
-  my $p = $connection->collection('person')->create({ name => 'Bruce', age => 30 });
+  my $p = $connection->collection('person')->create({name => 'Bruce', age => 30});
   my @args;
 
   no warnings 'redefine';

@@ -130,12 +130,12 @@ provided.
 =cut
 
 has model_class => sub { shift->_build_model_class };
-has namespaces => sub { shift->_build_namespaces };
-has storage => sub { shift->_build_storage };
+has namespaces  => sub { shift->_build_namespaces };
+has storage     => sub { shift->_build_storage };
 
-sub _build_model_class { 'Mandel::Model' }
-sub _build_namespaces { [ ref $_[0] ] }
-sub _build_storage { Mango->new('mongodb://localhost/mandeltest') }
+sub _build_model_class {'Mandel::Model'}
+sub _build_namespaces  { [ref $_[0]] }
+sub _build_storage     { Mango->new('mongodb://localhost/mandeltest') }
 
 =head1 METHODS
 
@@ -156,10 +156,10 @@ object.
 =cut
 
 sub connect {
-  my($self, @args) = @_;
+  my ($self, @args) = @_;
   my $storage = Mango->new(@args);
 
-  if(my $class = ref $self) {
+  if (my $class = ref $self) {
     $self = $class->new(%$self, storage => $storage);
   }
   else {
@@ -179,12 +179,12 @@ Returns a list of all the documents in the L</namespaces>.
 
 sub all_document_names {
   my $self = shift;
-  my %names = map { $_, 1 } keys %{ $self->{model} || {} };
+  my %names = map { $_, 1 } keys %{$self->{model} || {}};
 
-  for my $ns (@{ $self->namespaces }) {
-    for my $name (@{ $LOADER->search($ns) }) {
+  for my $ns (@{$self->namespaces}) {
+    for my $name (@{$LOADER->search($ns)}) {
       $name =~ s/^${ns}:://;
-      $names{ Mojo::Util::decamelize($name) } = 1;
+      $names{Mojo::Util::decamelize($name)} = 1;
     }
   }
 
@@ -203,15 +203,15 @@ Given a document name, find the related class name, ensure that it is loaded
 sub class_for {
   my ($self, $name) = @_;
 
-  if(my $class = $self->{loaded}{$name}) {
+  if (my $class = $self->{loaded}{$name}) {
     return $class;
   }
 
-  for my $ns (@{ $self->namespaces }) {
+  for my $ns (@{$self->namespaces}) {
     my $class = $ns . '::' . Mojo::Util::camelize($name);
-    my $e = $LOADER->load($class);
+    my $e     = $LOADER->load($class);
     die $e if ref $e;
-    next if $e;
+    next   if $e;
     return $self->{loaded}{$name} = $class;
   }
 
@@ -227,7 +227,7 @@ Returns a L<Mango::Collection> object.
 =cut
 
 sub collection {
-  my($self, $name) = @_;
+  my ($self, $name) = @_;
 
   $self->model($name)->new_collection($self);
 }
@@ -245,13 +245,13 @@ C<model()> method defined.
 =cut
 
 sub model {
-  my($self, $name, $model) = @_;
+  my ($self, $name, $model) = @_;
 
-  if($model) {
+  if ($model) {
     $model = $self->model_class->new($model) if ref $model eq 'HASH';
     $model->name($name);
     $self->{loaded}{$name} = $model->document_class;
-    $self->{model}{$name} = $model;
+    $self->{model}{$name}  = $model;
     return $self;
   }
   else {
@@ -277,11 +277,11 @@ The C<initialize()> method will be called like this:
 =cut
 
 sub initialize {
-  my $args = ref $_[-1] eq 'HASH' ? pop : {};
-  my $self = shift;
+  my $args      = ref $_[-1] eq 'HASH' ? pop : {};
+  my $self      = shift;
   my @documents = @_ ? @_ : $self->all_document_names;
 
-  for my $document ( @documents ) {
+  for my $document (@documents) {
     my $class = $self->class_for($document);
     $class->initialize($self, $args);
   }
@@ -294,7 +294,7 @@ See L</SYNOPSIS>.
 =cut
 
 sub import {
-  my($class) = @_;
+  my ($class) = @_;
   my $caller = caller;
   return unless $class eq __PACKAGE__;
   Mojo::Util::deprecated("use Mandel; will be deprecated. Use Mojo::Base 'Mandel'; instead");

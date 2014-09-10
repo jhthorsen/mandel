@@ -95,7 +95,7 @@ The name of the method used to search related documents.
 
 =cut
 
-has add_method_name => sub { sprintf 'add_%s', shift->accessor };
+has add_method_name    => sub { sprintf 'add_%s',    shift->accessor };
 has search_method_name => sub { sprintf 'search_%s', shift->accessor };
 
 =head1 METHODS
@@ -110,92 +110,100 @@ Add methods to L<Mandel::Relationship/document_class>.
 =cut
 
 sub monkey_patch {
-  shift
-    ->_monkey_patch_all_method
-    ->_monkey_patch_add_method
-    ->_monkey_patch_search_method;
+  shift->_monkey_patch_all_method->_monkey_patch_add_method->_monkey_patch_search_method;
 }
 
 sub _monkey_patch_all_method {
-  my $self = shift;
+  my $self   = shift;
   my $search = $self->search_method_name;
 
-  Mojo::Util::monkey_patch($self->document_class, $self->accessor, sub {
-    my($doc, $cb) = @_;
+  Mojo::Util::monkey_patch(
+    $self->document_class,
+    $self->accessor,
+    sub {
+      my ($doc, $cb) = @_;
 
-    # Blocking
-    return $doc->$search->all unless $cb;
+      # Blocking
+      return $doc->$search->all unless $cb;
 
-    # Non-blocking
-    $doc->$search->all(sub {
-      my($collection, $err, $objs) = @_;
-      $doc->$cb($err, $objs);
-    });
+      # Non-blocking
+      $doc->$search->all(
+        sub {
+          my ($collection, $err, $objs) = @_;
+          $doc->$cb($err, $objs);
+        }
+      );
 
-    return $doc;
-  });
+      return $doc;
+    }
+  );
 
   return $self;
 }
 
 sub _monkey_patch_add_method {
-  my $self = shift;
+  my $self          = shift;
   my $foreign_field = $self->foreign_field;
 
-  Mojo::Util::monkey_patch($self->document_class, $self->add_method_name, sub {
-    my($doc, $obj, $cb) = @_;
+  Mojo::Util::monkey_patch(
+    $self->document_class,
+    $self->add_method_name,
+    sub {
+      my ($doc, $obj, $cb) = @_;
 
-    if(ref $obj eq 'HASH') {
-      $obj = $self->_related_model->new_collection($doc->connection)->create($obj);
+      if (ref $obj eq 'HASH') {
+        $obj = $self->_related_model->new_collection($doc->connection)->create($obj);
+      }
+
+      $obj->data->{$foreign_field} = bson_dbref $doc->model->collection_name, $doc->id;
+
+      # Blocking
+      unless ($cb) {
+        $obj->save;
+        $doc->save;
+        return $obj;
+      }
+
+      # Non-blocking
+      Mojo::IOLoop->delay(
+        sub {
+          my ($delay) = @_;
+          $obj->save($delay->begin);
+          $doc->save($delay->begin);
+        },
+        sub {
+          my ($delay, $o_err, $d_err) = @_;
+          my $err = $o_err || $d_err;
+          $doc->$cb($err, $obj);
+        },
+      );
+
+      return $doc;
     }
-
-    $obj->data->{$foreign_field} = bson_dbref $doc->model->collection_name, $doc->id;
-
-    # Blocking
-    unless ($cb) {
-      $obj->save;
-      $doc->save;
-      return $obj;
-    }
-
-    # Non-blocking
-    Mojo::IOLoop->delay(
-      sub {
-        my($delay) = @_;
-        $obj->save($delay->begin);
-        $doc->save($delay->begin);
-      },
-      sub {
-        my($delay, $o_err, $d_err) = @_;
-        my $err = $o_err || $d_err;
-        $doc->$cb($err, $obj);
-      },
-    );
-
-    return $doc;
-  });
+  );
 
   return $self;
 }
 
 sub _monkey_patch_search_method {
-  my $self = shift;
+  my $self          = shift;
   my $foreign_field = $self->foreign_field;
   my $related_class = $self->related_class;
 
-  Mojo::Util::monkey_patch($self->document_class, $self->search_method_name, sub {
-    my($doc, $query, $extra) = @_;
-    my $related_model = $self->_related_model;
+  Mojo::Util::monkey_patch(
+    $self->document_class,
+    $self->search_method_name,
+    sub {
+      my ($doc, $query, $extra) = @_;
+      my $related_model = $self->_related_model;
 
-    return $related_model->new_collection(
-      $doc->connection,
-      extra => $extra || {},
-      query => {
-        %{ $query || {} },
-        sprintf('%s.$id', $foreign_field) => $doc->id,
-      },
-    );
-  });
+      return $related_model->new_collection(
+        $doc->connection,
+        extra => $extra || {},
+        query => {%{$query || {}}, sprintf('%s.$id', $foreign_field) => $doc->id,},
+      );
+    }
+  );
 
   return $self;
 }

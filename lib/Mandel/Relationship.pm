@@ -1,4 +1,4 @@
-package Mandel::Relationship;
+package   Mandel::Relationship;
 
 =head1 NAME
 
@@ -46,16 +46,16 @@ Holds the related document class name.
 
 =cut
 
-has accessor => '';
+has accessor       => '';
 has document_class => '';
-has foreign_field => sub { shift->document_class->model->name };
-has related_class => '';
+has foreign_field  => sub { shift->document_class->model->name };
+has related_class  => '';
 
 # is this a bad memory leak? $model => $rel_obj => $_related_model
 # i don't think so, since the number of objects are constant
 has _related_model => sub {
   my $self = shift;
-  my $e = $LOADER->load($self->related_class);
+  my $e    = $LOADER->load($self->related_class);
   die $e if ref $e;
   $self->related_class->model;
 };

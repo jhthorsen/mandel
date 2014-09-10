@@ -1,4 +1,4 @@
-package Mandel::Model::Field;
+package   Mandel::Model::Field;
 
 =head1 NAME
 
@@ -29,8 +29,8 @@ Returns the type specified as "isa" in the constructor.
 
 =cut
 
-sub builder { shift->{builder} }
-sub name { shift->{name} }
+sub builder         { shift->{builder} }
+sub name            { shift->{name} }
 sub type_constraint { shift->{isa} }
 
 =head1 AUTHOR

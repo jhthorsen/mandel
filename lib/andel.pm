@@ -38,7 +38,7 @@ sub c {
   my $name = shift or die "Usage: c('collection_name')";
   my $collection = $mandel->collection($name);
 
-  if(@_ and ref $_[0] eq 'HASH') {
+  if (@_ and ref $_[0] eq 'HASH') {
     return $collection->create($_[0])->save;
   }
 
@@ -58,7 +58,7 @@ See L</SYNOPSIS>.
 =cut
 
 sub import {
-  my $class = shift;
+  my $class  = shift;
   my $caller = caller;
 
   strict->import;
@@ -72,7 +72,7 @@ sub import {
 }
 
 sub _setup {
-  my($class, $model, @connect) = @_;
+  my ($class, $model, @connect) = @_;
   eval "use $model; 1" or die "use $model: $@";
   $connect[0] = "mongodb://localhost/$connect[0]" if @connect and $connect[0] !~ /^mongodb:/;
   $mandel = $model->connect(@connect);

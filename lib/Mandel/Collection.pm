@@ -1,4 +1,4 @@
-package Mandel::Collection;
+package   Mandel::Collection;
 
 =head1 NAME
 
@@ -41,7 +41,7 @@ An object that inherit from L<Mandel::Model>.
 =cut
 
 has connection => sub { confess "connection required in constructor" };
-has model => sub { confess "model required in constructor" };
+has model      => sub { confess "model required in constructor" };
 
 has _storage_collection => sub {
   my $self = shift;
@@ -61,16 +61,18 @@ query.
 =cut
 
 sub all {
-  my($self, $cb) = @_;
+  my ($self, $cb) = @_;
 
 
   my $c = $self->_new_cursor;
-  return [ map { $self->_new_document($_, 1) } @{ $c->all } ] unless $cb;
+  return [map { $self->_new_document($_, 1) } @{$c->all}] unless $cb;
 
-  $c->all(sub {
-    my($cursor, $err, $docs) = @_;
-    return $self->$cb($err, [ map { $self->_new_document($_, 1) } @$docs ]);
-  });
+  $c->all(
+    sub {
+      my ($cursor, $err, $docs) = @_;
+      return $self->$cb($err, [map { $self->_new_document($_, 1) } @$docs]);
+    }
+  );
   return $self;
 }
 
@@ -104,12 +106,12 @@ Used to count how many documents the current L</search> query match.
 =cut
 
 sub count {
-  my($self, $cb) = @_;
+  my ($self, $cb) = @_;
 
   my $c = $self->_new_cursor;
   return $c->count unless $cb;
 
-  $c->count( sub{shift; $self->$cb(@_)} );
+  $c->count(sub { shift; $self->$cb(@_) });
   return $self;
 }
 
@@ -123,12 +125,12 @@ Get all distinct values for key in this collection.
 =cut
 
 sub distinct {
-  my($self, $field, $cb) = @_;
+  my ($self, $field, $cb) = @_;
 
   my $c = $self->_new_cursor;
   return $c->distinct($field) unless $cb;
 
-  $c->distinct( sub{shift; $self->$cb(@_)} );
+  $c->distinct(sub { shift; $self->$cb(@_) });
   return $self;
 }
 
@@ -143,10 +145,7 @@ Returns a L<Mandel::Iterator> object based on the L</search> performed.
 sub iterator {
   my $self = shift;
 
-  Mandel::Iterator->new(
-    cursor => $self->_new_cursor,
-    model => $self->model,
-  );
+  Mandel::Iterator->new(cursor => $self->_new_cursor, model => $self->model,);
 }
 
 =head2 patch
@@ -171,19 +170,16 @@ C<%extra> arguments default to:
 =cut
 
 sub patch {
-  my($self, $changes, $cb) = @_;
+  my ($self, $changes, $cb) = @_;
   my $extra = $self->{extra};
 
-  warn '[Mandel::Collection::patch] ', Data::Dumper->new([$changes, $self->{query}, $extra])->Indent(1)->Sortkeys(1)->Terse(1)->Dump if DEBUG;
+  warn '[Mandel::Collection::patch] ',
+    Data::Dumper->new([$changes, $self->{query}, $extra])->Indent(1)->Sortkeys(1)->Terse(1)->Dump
+    if DEBUG;
   $self->_storage_collection->update(
     $self->{query} || {},
-    {
-      '$set' => $changes
-    },
-    {
-      upsert => $extra->{upsert} // bson_false,
-      multi => $extra->{multi} // bson_true,
-    },
+    {'$set' => $changes},
+    {upsert => $extra->{upsert} // bson_false, multi => $extra->{multi} // bson_true,},
     $cb ? (sub { $self->$cb($_[1]) }) : (),
   );
 
@@ -200,13 +196,15 @@ Remove the documents that query given to L</search>.
 =cut
 
 sub remove {
-  my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
+  my $cb   = ref $_[-1] eq 'CODE' ? pop : undef;
   my $self = shift;
-  my $c = $self->_storage_collection;
+  my $c    = $self->_storage_collection;
   my @args = $self->{query};
 
-  warn '[Mandel::Collection::remove] ', Data::Dumper->new([$self->{query}])->Indent(1)->Sortkeys(1)->Terse(1)->Dump if DEBUG;
-  push @args, sub{$self->$cb($_[1])} if $cb;
+  warn '[Mandel::Collection::remove] ', Data::Dumper->new([$self->{query}])->Indent(1)->Sortkeys(1)->Terse(1)->Dump
+    if DEBUG;
+  push @args, sub { $self->$cb($_[1]) }
+    if $cb;
 
   $c->remove(@args);
   $self;
@@ -222,7 +220,7 @@ Used to save a document. The callback receives a L<Mandel::Document>.
 =cut
 
 sub save {
-  my($self, $raw, $cb) = @_;
+  my ($self, $raw, $cb) = @_;
   my $c = $self->_storage_collection;
 
   $raw->{_id} ||= bson_oid;
@@ -234,10 +232,13 @@ sub save {
     return $self->_new_document($raw, 1);
   }
 
-  $c->save($raw, sub {
-    my($collection, $err, $doc) = @_;
-    $self->$cb($err, $self->_new_document($raw, 1));
-  });
+  $c->save(
+    $raw,
+    sub {
+      my ($collection, $err, $doc) = @_;
+      $self->$cb($err, $self->_new_document($raw, 1));
+    }
+  );
 
   return $self;
 }
@@ -256,12 +257,12 @@ all the keys need to match the L<Mango::Cursor/ATTRIBUTES>.
 =cut
 
 sub search {
-  my($self, $query, $extra) = @_;
+  my ($self, $query, $extra) = @_;
   my $class = blessed $self;
   my $clone = $class->new(%$self);
 
-  @{ $clone->{extra} }{keys %$extra} = values %$extra if $extra;
-  @{ $clone->{query} }{keys %$query} = values %$query if $query;
+  @{$clone->{extra}}{keys %$extra} = values %$extra if $extra;
+  @{$clone->{query}}{keys %$query} = values %$query if $query;
   $clone;
 }
 
@@ -276,7 +277,7 @@ C<%search> query.
 =cut
 
 sub single {
-  my($self, $cb) = @_;
+  my ($self, $cb) = @_;
 
   my $c = $self->_new_cursor->limit(-1);
   unless ($cb) {
@@ -284,47 +285,47 @@ sub single {
     return $self->_new_document($doc, 1);
   }
 
-  $c->next(sub {
-    my($cursor, $err, $doc) = @_;
-    $self->$cb($err, $doc ? $self->_new_document($doc, 1) : undef);
-  });
+  $c->next(
+    sub {
+      my ($cursor, $err, $doc) = @_;
+      $self->$cb($err, $doc ? $self->_new_document($doc, 1) : undef);
+    }
+  );
   return $self;
 }
 
 sub _new_cursor {
-  my $self = shift;
-  my $extra = $self->{extra} || {};
+  my $self   = shift;
+  my $extra  = $self->{extra} || {};
   my $cursor = $self->_storage_collection->find;
 
   $cursor->query($self->{query}) if $self->{query};
   $cursor->$_($extra->{$_}) for keys %$extra;
 
-  if(DEBUG) {
-    local $cursor->{collection}{db} = $cursor->{collection}{db}{name}; # hide big data structure
+  if (DEBUG) {
+    local $cursor->{collection}{db} = $cursor->{collection}{db}{name};    # hide big data structure
     warn '[', +(caller 1)[3], '] ', Data::Dumper->new([$cursor])->Indent(1)->Sortkeys(1)->Terse(1)->Dump;
   }
 
   $cursor;
-};
+}
 
 sub _new_document {
-  my($self, $doc, $from_storage) = @_;
+  my ($self, $doc, $from_storage) = @_;
   my $model = $self->model;
   my @extra;
 
-  if($doc) {
+  if ($doc) {
     push @extra, data => $doc;
-    push @extra, dirty => { map { $_, 1 } keys %$doc };
+    push @extra, dirty => {map { $_, 1 } keys %$doc};
   }
-  if(my $connection = $self->{connection}) {
-    push @extra, connection => $connection,
+  if (my $connection = $self->{connection}) {
+    push @extra,
+      connection => $connection,
+      ;
   }
 
-  $model->document_class->new(
-    model => $model,
-    in_storage => $from_storage,
-    @extra,
-  );
+  $model->document_class->new(model => $model, in_storage => $from_storage, @extra,);
 }
 
 =head1 SEE ALSO

@@ -29,9 +29,9 @@ my $document;
 }
 
 {
-  $document = $collection->create({ foo => 123 });
-  is_deeply $document->{data}, { foo => 123 }, 'raw was set in create()';
-  is_deeply $document->dirty, { foo => 1 }, 'dirty was set from doc';
+  $document = $collection->create({foo => 123});
+  is_deeply $document->{data}, {foo => 123}, 'raw was set in create()';
+  is_deeply $document->dirty,  {foo => 1},   'dirty was set from doc';
   is $document->in_storage, 0, 'in_storage = 0';
 }
 

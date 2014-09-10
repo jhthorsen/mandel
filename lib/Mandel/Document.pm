@@ -93,14 +93,14 @@ This can field can also be set.
 
 sub id {
   my $self = shift;
-  my $raw = $self->data;
+  my $raw  = $self->data;
 
-  if(@_) {
+  if (@_) {
     $self->dirty->{_id} = 1;
     $raw->{_id} = ref $_[0] ? $_[0] : bson_oid $_[0];
     return $self;
   }
-  elsif($raw->{_id}) {
+  elsif ($raw->{_id}) {
     return $raw->{_id};
   }
   else {
@@ -143,8 +143,8 @@ many times the field has been updated before saved..?
 =cut
 
 has connection => sub { confess "connection required in constructor" };
-has model => sub { confess "model required in constructor" };
-has dirty => sub { +{} };
+has model      => sub { confess "model required in constructor" };
+has dirty      => sub { +{} };
 has in_storage => 0;
 
 has _storage_collection => sub {
@@ -152,7 +152,7 @@ has _storage_collection => sub {
   $self->connection->_storage_collection($self->model->collection_name);
 };
 
-has data => sub { shift->_build_data }; # raw mongodb document data
+has data => sub { shift->_build_data };    # raw mongodb document data
 
 sub _build_data { +{} }
 
@@ -179,7 +179,7 @@ A no-op placeholder useful for initialization. See L<Mandel/initialize>.
 
 =cut
 
-sub initialize { shift }
+sub initialize {shift}
 
 =head2 contains
 
@@ -217,7 +217,7 @@ Returns true if L</dirty> contains any field names.
 
 sub is_changed {
   return 0 unless $_[0]->{dirty};
-  return 0 unless keys %{ $_[0]->{dirty} };
+  return 0 unless keys %{$_[0]->{dirty}};
   return 1;
 }
 
@@ -235,24 +235,28 @@ exist.
 =cut
 
 sub patch {
-  my($self, $changes, $cb) = @_;
+  my ($self, $changes, $cb) = @_;
   my $data = $self->data;
 
-  if($changes) {
+  if ($changes) {
     @$data{keys %$changes} = values %$changes;
   }
 
-  $data = { %$data };
-  delete $data->{_id}; # Mod on _id not allowed
+  $data = {%$data};
+  delete $data->{_id};    # Mod on _id not allowed
 
   $self->_storage_collection->update(
-    { _id => $self->id },
-    { '$set' => $data },
-    { upsert => bson_true },
-    $cb ? (sub {
-      $self->_mark_stored_clean unless $_[1];
-      $self->$cb($_[1]);
-    }) : (),
+    {_id    => $self->id},
+    {'$set' => $data},
+    {upsert => bson_true},
+    $cb
+    ? (
+      sub {
+        $self->_mark_stored_clean unless $_[1];
+        $self->$cb($_[1]);
+      }
+      )
+    : (),
   );
 
   $self->_mark_stored_clean unless $cb;
@@ -270,21 +274,24 @@ all fields as L</dirty>.
 =cut
 
 sub remove {
-  my($self, $cb) = @_;
+  my ($self, $cb) = @_;
   my $c = $self->_storage_collection;
-  my @args = ( { _id => $self->id }, { single => 1 } );
+  my @args = ({_id => $self->id}, {single => 1});
 
   warn "[$self\::remove] @{[$self->id]}\n" if DEBUG;
 
   if ($cb) {
-    $c->remove( @args, sub {
-      my($collection, $err, $doc) = @_;
-      $self->_mark_removed_dirty unless $err;
-      $self->$cb($err);
-    });
+    $c->remove(
+      @args,
+      sub {
+        my ($collection, $err, $doc) = @_;
+        $self->_mark_removed_dirty unless $err;
+        $self->$cb($err);
+      }
+    );
   }
   else {
-    $c->remove( @args );
+    $c->remove(@args);
     $self->_mark_removed_dirty;
   }
 
@@ -293,7 +300,7 @@ sub remove {
 
 sub _mark_removed_dirty {
   my $self = shift;
-  $self->dirty->{$_} = 1 for keys %{ $self->data };
+  $self->dirty->{$_} = 1 for keys %{$self->data};
   $self->in_storage(0);
 }
 
@@ -311,25 +318,29 @@ immediately unless L</is_changed> is true and L</in_storage> is false.
 =cut
 
 sub save {
-  my($self, $cb) = @_;
+  my ($self, $cb) = @_;
 
-  if(!$self->is_changed and $self->in_storage) {
+  if (!$self->is_changed and $self->in_storage) {
     $self->$cb('') if $cb;
     return $self;
   }
 
-  $self->id; # make sure we have an ObjectID
+  $self->id;    # make sure we have an ObjectID
 
   warn "[$self\::save] ", Data::Dumper->new([$self->data])->Indent(1)->Sortkeys(1)->Terse(1)->Dump if DEBUG;
   my $c = $self->_storage_collection;
 
   if ($cb) {
-    $c->save($self->data, sub {
-      my($collection, $err, $doc) = @_;
-      $self->_mark_stored_clean unless $err;
-      $self->$cb($err);
-    });
-  } else {
+    $c->save(
+      $self->data,
+      sub {
+        my ($collection, $err, $doc) = @_;
+        $self->_mark_stored_clean unless $err;
+        $self->$cb($err);
+      }
+    );
+  }
+  else {
     $c->save($self->data);
     $self->_mark_stored_clean;
   }
@@ -353,32 +364,32 @@ die if the pointer points to non-compatible data.
 =cut
 
 sub set {
-  my($self, $pointer, $val) = @_;
+  my ($self, $pointer, $val) = @_;
   my $raw = $self->data;
-  my(@path, $field);
+  my (@path, $field);
 
   return $self unless $pointer =~ s!^/!!;
   @path = split '/', $pointer;
   $field = $path[0];
 
-  while(@path) {
-    my $p = shift @path;
+  while (@path) {
+    my $p    = shift @path;
     my $type = ref $raw;
     my $want = looks_like_number $p ? 'INDEX' : 'KEY';
 
-    if($type eq 'HASH') {
-      if(@path) {
+    if ($type eq 'HASH') {
+      if (@path) {
         $raw = $raw->{$p} ||= looks_like_number $path[0] ? [] : {};
       }
       else {
         $raw->{$p} = $val;
       }
     }
-    elsif($type eq 'ARRAY') {
-      if($want ne 'INDEX') {
+    elsif ($type eq 'ARRAY') {
+      if ($want ne 'INDEX') {
         confess "Cannot set $want in $type for /$pointer ($p)";
       }
-      elsif(@path) {
+      elsif (@path) {
         $raw = $raw->[$p] ||= looks_like_number $path[0] ? [] : {};
       }
       else {
@@ -401,28 +412,28 @@ See L</SYNOPSIS>.
 =cut
 
 sub import {
-  my $class = shift;
-  my %args = @_ == 1 ? (name => shift) : @_;
-  my $caller = caller;
-  my $model = Mandel::Model->new(document_class => $caller, %args);
+  my $class      = shift;
+  my %args       = @_ == 1 ? (name => shift) : @_;
+  my $caller     = caller;
+  my $model      = Mandel::Model->new(document_class => $caller, %args);
   my $base_class = 'Mandel::Document';
 
-  for (qw/name extends/) { 
-    if($args{$_} and $args{$_} =~ /::/) {
+  for (qw/name extends/) {
+    if ($args{$_} and $args{$_} =~ /::/) {
       $base_class = delete $args{$_};
     }
   }
-  if(!$args{name}) {
+  if (!$args{name}) {
     $args{name} = Mojo::Util::decamelize(($caller =~ /(\w+)$/)[0]);
     $model->name($args{name});
   }
 
   monkey_patch $caller, belongs_to => sub { $model->relationship(belongs_to => @_)->monkey_patch };
-  monkey_patch $caller, field => sub { $model->field(shift, { @_ }) };
+  monkey_patch $caller, field => sub { $model->field(shift, {@_}) };
   monkey_patch $caller, has_many => sub { $model->relationship(has_many => @_)->monkey_patch };
-  monkey_patch $caller, has_one => sub { $model->relationship(has_one => @_)->monkey_patch };
-  monkey_patch $caller, list_of => sub { $model->relationship(list_of => @_)->monkey_patch };
-  monkey_patch $caller, model => sub { $model };
+  monkey_patch $caller, has_one  => sub { $model->relationship(has_one  => @_)->monkey_patch };
+  monkey_patch $caller, list_of  => sub { $model->relationship(list_of  => @_)->monkey_patch };
+  monkey_patch $caller, model    => sub {$model};
 
   @_ = ($class, $base_class);
   goto &Mojo::Base::import;

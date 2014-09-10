@@ -15,9 +15,9 @@ eval <<"PACKAGE" or die $@;
 PACKAGE
 
 can_ok 'Custom::Base::Class', 'model';
-can_ok 'My::Document', 'model';
-isa_ok 'My::Document', 'Custom::Base::Class';
-isa_ok 'My::Document', 'Mandel::Document';
+can_ok 'My::Document',        'model';
+isa_ok 'My::Document',        'Custom::Base::Class';
+isa_ok 'My::Document',        'Mandel::Document';
 isa_ok 'Custom::Base::Class', 'Mandel::Document';
 
 {
@@ -26,8 +26,8 @@ isa_ok 'Custom::Base::Class', 'Mandel::Document';
 }
 
 {
-  is Custom::Base::Class->model->collection_name, 'class', 'class collection';
-  is My::Document->model->collection_name, 'documents', 'models collection';
+  is Custom::Base::Class->model->collection_name, 'class',     'class collection';
+  is My::Document->model->collection_name,        'documents', 'models collection';
 }
 
 done_testing;

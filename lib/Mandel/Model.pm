@@ -18,7 +18,7 @@ use Mandel::Model::Field;
 use Carp 'confess';
 
 my $LOADER = Mojo::Loader->new;
-my $ANON = 1;
+my $ANON   = 1;
 
 =head1 ATTRIBUTES
 
@@ -46,16 +46,16 @@ has collection_name => sub {
   my $self = shift;
   my $name = $self->name;
 
-  return $name =~ /s$/ ? $name : $name .'s' if $name;
+  return $name =~ /s$/ ? $name : $name . 's' if $name;
   confess "collection_name or name required in constructor";
 };
 
 has collection_class => 'Mandel::Collection';
 
 has document_class => sub {
-  my $self = shift;
-  my $name = ucfirst $self->name || 'AnonDoc';
-  my $class = "Mandel::Document::__ANON_${ANON}__::$name"; # this might change
+  my $self  = shift;
+  my $name  = ucfirst $self->name || 'AnonDoc';
+  my $class = "Mandel::Document::__ANON_${ANON}__::$name";    # this might change
 
   eval <<"  PACKAGE" or confess $@;
   package $class;
@@ -84,13 +84,13 @@ object.
 =cut
 
 sub field {
-  my($self, $name, $meta) = @_;
+  my ($self, $name, $meta) = @_;
 
-  if($meta) {
-    return $self->_add_field($name => $meta); # $name might be an array-ref
+  if ($meta) {
+    return $self->_add_field($name => $meta);    # $name might be an array-ref
   }
 
-  for(@{ $self->{fields} || [] }) {
+  for (@{$self->{fields} || []}) {
     return $_ if $name eq $_->name;
   }
 
@@ -98,20 +98,21 @@ sub field {
 }
 
 sub _add_field {
-  my($self, $fields, $meta) = @_;
+  my ($self, $fields, $meta) = @_;
   my $class = $self->document_class;
 
   # Compile fieldibutes
-  for my $name (@{ ref $fields eq 'ARRAY' ? $fields : [$fields] }) {
+  for my $name (@{ref $fields eq 'ARRAY' ? $fields : [$fields]}) {
     local $meta->{name} = $name;
-    my $field = Mandel::Model::Field->new($meta);
+    my $field   = Mandel::Model::Field->new($meta);
     my $builder = $field->builder;
-    my $code = "";
+    my $code    = "";
 
     $code .= "package $class;\nsub $name {\n my \$raw = \$_[0]->data;\n";
 
-    if($builder) {
-      $code .= "return exists \$raw->{'$name'} ? (\$raw->{'$name'}) : (\$raw->{'$name'} = \$_[0]->\$builder) if \@_ == 1;\n";
+    if ($builder) {
+      $code
+        .= "return exists \$raw->{'$name'} ? (\$raw->{'$name'}) : (\$raw->{'$name'} = \$_[0]->\$builder) if \@_ == 1;\n";
     }
     else {
       $code .= "return \$raw->{'$name'} if \@_ == 1;\n";
@@ -128,7 +129,7 @@ sub _add_field {
     warn "-- Attribute $name in $class\n$code\n\n" if $ENV{MOJO_BASE_DEBUG};
     Carp::croak "Mandel::Document error: $@ ($code)" unless eval "$code;1";
 
-    push @{ $self->{fields} }, $field;
+    push @{$self->{fields}}, $field;
   }
 
   $self;
@@ -144,19 +145,19 @@ thie model.
 =cut
 
 sub fields {
-  @{ $_[0]->{fields} || [] };
+  @{$_[0]->{fields} || []};
 }
 
 sub _field_type {
-  my($self, $type) = @_;
+  my ($self, $type) = @_;
   my $code = "";
 
   use Types::Standard qw( Num );
 
-  if($type->can_be_inlined) {
+  if ($type->can_be_inlined) {
     $code .= $type->inline_assert('$_');
   }
-  if($type->is_a_type_of(Num)) {
+  if ($type->is_a_type_of(Num)) {
     $code .= "\$_ += 0;\n";
   }
 
@@ -185,23 +186,18 @@ C<%args> is passed on the the L<relationship|Mandel::Relationship> constructor.
 sub relationship {
   my $self = shift;
 
-  if(@_ == 1) {
+  if (@_ == 1) {
     return $self->{relationship}{$_[0]};
   }
 
-  my($type, $field, $other, %args) = @_;
-  my $class = 'Mandel::Relationship::' .Mojo::Util::camelize($type);
-  my $e = $LOADER->load($class);
+  my ($type, $field, $other, %args) = @_;
+  my $class = 'Mandel::Relationship::' . Mojo::Util::camelize($type);
+  my $e     = $LOADER->load($class);
 
   confess $e if ref $e;
 
   $self->{relationship}{$field}
-    = $class->new(
-        accessor => $field,
-        document_class => $self->document_class,
-        related_class => $other,
-        %args,
-      );
+    = $class->new(accessor => $field, document_class => $self->document_class, related_class => $other, %args,);
 }
 
 =head2 new_collection
@@ -213,13 +209,10 @@ Returns a new instance of L</collection_class>.
 =cut
 
 sub new_collection {
-  my($self, $connection, %args) = @_;
+  my ($self, $connection, %args) = @_;
 
-  $self->collection_class->new({
-    connection => $connection || confess('$model->new_collection($connection)'),
-    model => $self,
-    %args,
-  });
+  $self->collection_class->new(
+    {connection => $connection || confess('$model->new_collection($connection)'), model => $self, %args,});
 }
 
 =head1 SEE ALSO

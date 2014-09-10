@@ -68,58 +68,62 @@ Add methods to L<Mandel::Relationship/document_class>.
 =cut
 
 sub monkey_patch {
-  my $self = shift;
+  my $self          = shift;
   my $foreign_field = $self->foreign_field;
 
-  Mojo::Util::monkey_patch($self->document_class, $self->accessor, sub {
-    my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
-    my $doc = shift;
-    my $obj = shift;
-    my $related_model = $self->_related_model;
-    my $related_collection = $related_model->new_collection($doc->connection);
-    
-    if($obj) { # set ===========================================================
-      if(ref $obj eq 'HASH') {
-        $obj = $related_collection->create($obj);
+  Mojo::Util::monkey_patch(
+    $self->document_class,
+    $self->accessor,
+    sub {
+      my $cb                 = ref $_[-1] eq 'CODE' ? pop : undef;
+      my $doc                = shift;
+      my $obj                = shift;
+      my $related_model      = $self->_related_model;
+      my $related_collection = $related_model->new_collection($doc->connection);
+
+      if ($obj) {    # set ===========================================================
+        if (ref $obj eq 'HASH') {
+          $obj = $related_collection->create($obj);
+        }
+
+        $obj->data->{$foreign_field} = bson_dbref $doc->model->collection_name, $doc->id;
+
+        # Blocking
+        unless ($cb) {
+          $related_collection->search({sprintf('%s.$id', $foreign_field), $doc->id})->remove();
+          $obj->save;
+          $doc->save;
+          return $doc;
+        }
+
+        # Non-blocking
+        Mojo::IOLoop->delay(
+          sub {
+            my ($delay) = @_;
+            $related_collection->search({sprintf('%s.$id', $foreign_field), $doc->id})->remove($delay->begin);
+          },
+          sub {
+            my ($delay, $err) = @_;
+            return $delay->begin(0)->($err) if $err;
+            $doc->save($delay->begin);
+            $obj->save($delay->begin);
+          },
+          sub {
+            my ($delay, $o_err, $d_err) = @_;
+            my $err = $o_err || $d_err;
+            $doc->$cb($err, $obj);
+          },
+        );
+      }
+      else {    # get =============================================================
+        my $cursor = $related_collection->search({sprintf('%s.$id', $foreign_field), $doc->id});
+        return $cursor->single unless $cb;
+        $cursor->single(sub { $doc->$cb(@_[1, 2]) });
       }
 
-      $obj->data->{$foreign_field} = bson_dbref $doc->model->collection_name, $doc->id;
-      
-      # Blocking
-      unless ($cb) {
-        $related_collection->search({ sprintf('%s.$id', $foreign_field), $doc->id })->remove();
-        $obj->save;
-        $doc->save;
-        return $doc;
-      }
-
-      # Non-blocking
-      Mojo::IOLoop->delay(
-        sub {
-          my($delay) = @_;
-          $related_collection->search({ sprintf('%s.$id', $foreign_field), $doc->id })->remove($delay->begin);
-        },
-        sub {
-          my($delay, $err) = @_;
-          return $delay->begin(0)->($err) if $err;
-          $doc->save($delay->begin);
-          $obj->save($delay->begin);
-        },
-        sub {
-          my($delay, $o_err, $d_err) = @_;
-          my $err = $o_err || $d_err;
-          $doc->$cb($err, $obj);
-        },
-      );
+      return $doc;
     }
-    else { # get =============================================================
-      my $cursor = $related_collection->search({ sprintf('%s.$id', $foreign_field), $doc->id });
-      return $cursor->single unless $cb;
-      $cursor->single(sub { $doc->$cb(@_[1, 2]) });
-    }
-
-    return $doc;
-  });
+  );
 
   return $self;
 }

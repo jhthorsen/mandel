@@ -135,7 +135,7 @@ The name of the method used to search related documents.
 
 =cut
 
-has push_method_name => sub { sprintf 'push_%s', shift->accessor };
+has push_method_name   => sub { sprintf 'push_%s',   shift->accessor };
 has remove_method_name => sub { sprintf 'remove_%s', shift->accessor };
 has search_method_name => sub { sprintf 'search_%s', shift->accessor };
 
@@ -151,194 +151,184 @@ Add methods to L<Mandel::Relationship/document_class>.
 =cut
 
 sub monkey_patch {
-  shift
-    ->_monkey_patch_all_method
-    ->_monkey_patch_push_method
-    ->_monkey_patch_remove_method
-    ->_monkey_patch_search_method;
+  shift->_monkey_patch_all_method->_monkey_patch_push_method->_monkey_patch_remove_method->_monkey_patch_search_method;
 }
 
 sub _monkey_patch_all_method {
-  my $self = shift;
+  my $self     = shift;
   my $accessor = $self->accessor;
-  my $search = $self->search_method_name;
+  my $search   = $self->search_method_name;
 
-  Mojo::Util::monkey_patch($self->document_class, $self->accessor, sub {
-    my($doc, $cb) = @_;
+  Mojo::Util::monkey_patch(
+    $self->document_class,
+    $self->accessor,
+    sub {
+      my ($doc, $cb) = @_;
 
-    # Blocking
-    unless ($cb) {
-      my $objs = $doc->$search->all;
-      my %lookup = map { $_->id, $_ } @$objs;
-      return [ map { $lookup{$_->{'$id'}} } @{ $doc->data->{$accessor} || [] } ];
-    }
+      # Blocking
+      unless ($cb) {
+        my $objs = $doc->$search->all;
+        my %lookup = map { $_->id, $_ } @$objs;
+        return [map { $lookup{$_->{'$id'}} } @{$doc->data->{$accessor} || []}];
+      }
 
-    # Non-blocking
-    $doc->$search->all(sub {
-      my($collection, $err, $objs) = @_;
-      my %lookup = map { $_->id, $_ } @$objs;
+      # Non-blocking
+      $doc->$search->all(
+        sub {
+          my ($collection, $err, $objs) = @_;
+          my %lookup = map { $_->id, $_ } @$objs;
 
-      $doc->$cb(
-        $err, 
-        [ map { $lookup{$_->{'$id'}} } @{ $doc->data->{$accessor} || [] } ],
+          $doc->$cb($err, [map { $lookup{$_->{'$id'}} } @{$doc->data->{$accessor} || []}],);
+        }
       );
-    });
 
-    return $doc;
-  });
+      return $doc;
+    }
+  );
 
   return $self;
 }
 
 sub _monkey_patch_push_method {
-  my $self = shift;
+  my $self     = shift;
   my $accessor = $self->accessor;
 
-  Mojo::Util::monkey_patch($self->document_class, $self->push_method_name, sub {
-    my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
-    my($doc, $obj, $pos) = @_;
-    my($dbref, $list, @update);
+  Mojo::Util::monkey_patch(
+    $self->document_class,
+    $self->push_method_name,
+    sub {
+      my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
+      my ($doc, $obj, $pos) = @_;
+      my ($dbref, $list, @update);
 
-    if(ref $obj eq 'HASH') {
-      $obj = $self->_related_model->new_collection($doc->connection)->create($obj);
-    }
-    elsif(UNIVERSAL::isa($obj, 'Mango::BSON::ObjectID')) {
-      $obj = $self->_related_model->new_collection($doc->connection)->create({ id => $obj });
-      $obj->_mark_stored_clean; # prevent save() from actually doing something below
-    }
-
-    $dbref = bson_dbref $obj->model->collection_name, $obj->id;
-    $list = $doc->data->{$accessor} ||= [];
-
-    @update = (
-      $doc->data,
-      {
-        '$push' => {
-          $accessor => {
-            '$each' => [ $dbref ],
-            defined $pos ? ('$position' => $pos) : (),
-          },
-        },
-      },
-      {
-        upsert => 1,
-      },
-    );
-
-    # Blocking
-    unless ($cb) {
-      $obj->save;
-      $doc->_storage_collection->update(@update);
-      $doc->in_storage(1);
-
-      if(defined $pos and $pos < @$list) {
-        splice @$list, $pos, 0, $dbref;
+      if (ref $obj eq 'HASH') {
+        $obj = $self->_related_model->new_collection($doc->connection)->create($obj);
       }
-      else {
-        push @$list, $dbref;
+      elsif (UNIVERSAL::isa($obj, 'Mango::BSON::ObjectID')) {
+        $obj = $self->_related_model->new_collection($doc->connection)->create({id => $obj});
+        $obj->_mark_stored_clean;    # prevent save() from actually doing something below
       }
 
-      return $obj;
-    }
+      $dbref = bson_dbref $obj->model->collection_name, $obj->id;
+      $list = $doc->data->{$accessor} ||= [];
 
-    # Non-blocking
-    Mojo::IOLoop->delay(
-      sub {
-        my($delay) = @_;
-        $obj->save($delay->begin);
-        $doc->_storage_collection->update(@update, $delay->begin);
-      },
-      sub {
-        my($delay, $o_err, $d_err, $updated) = @_;
-        my $err = $o_err || $d_err;
-        $err ||= 'Document was not stored. Unknown error' unless $updated and $updated->{n};
+      @update = (
+        $doc->data,
+        {'$push' => {$accessor => {'$each' => [$dbref], defined $pos ? ('$position' => $pos) : (),},},},
+        {upsert => 1,},
+      );
 
-        unless($err) {
-          $doc->in_storage(1);
-          if(defined $pos and $pos < @$list) {
-            splice @$list, $pos, 0, $dbref;
-          }
-          else {
-            push @$list, $dbref;
-          }
+      # Blocking
+      unless ($cb) {
+        $obj->save;
+        $doc->_storage_collection->update(@update);
+        $doc->in_storage(1);
+
+        if (defined $pos and $pos < @$list) {
+          splice @$list, $pos, 0, $dbref;
+        }
+        else {
+          push @$list, $dbref;
         }
 
-        $doc->$cb($err // '', $obj);
-      },
-    );
+        return $obj;
+      }
 
-    return $doc;
-  });
+      # Non-blocking
+      Mojo::IOLoop->delay(
+        sub {
+          my ($delay) = @_;
+          $obj->save($delay->begin);
+          $doc->_storage_collection->update(@update, $delay->begin);
+        },
+        sub {
+          my ($delay, $o_err, $d_err, $updated) = @_;
+          my $err = $o_err || $d_err;
+          $err ||= 'Document was not stored. Unknown error' unless $updated and $updated->{n};
+
+          unless ($err) {
+            $doc->in_storage(1);
+            if (defined $pos and $pos < @$list) {
+              splice @$list, $pos, 0, $dbref;
+            }
+            else {
+              push @$list, $dbref;
+            }
+          }
+
+          $doc->$cb($err // '', $obj);
+        },
+      );
+
+      return $doc;
+    }
+  );
 
   return $self;
 }
 
 sub _monkey_patch_remove_method {
-  my $self = shift;
+  my $self     = shift;
   my $accessor = $self->accessor;
 
-  Mojo::Util::monkey_patch($self->document_class, $self->remove_method_name, sub {
-    my($doc, $obj, $cb) = @_;
-    my @update;
+  Mojo::Util::monkey_patch(
+    $self->document_class,
+    $self->remove_method_name,
+    sub {
+      my ($doc, $obj, $cb) = @_;
+      my @update;
 
-    unless (UNIVERSAL::isa($obj, 'Mandel::Document')) {
-      $obj = $self->_related_model->new_collection($doc->connection)->create({ _id => $obj });
-    }
+      unless (UNIVERSAL::isa($obj, 'Mandel::Document')) {
+        $obj = $self->_related_model->new_collection($doc->connection)->create({_id => $obj});
+      }
 
-    @update = (
-      { _id => $doc->id },
-      {
-        '$pull' => {
-          $accessor => bson_dbref($obj->model->collection_name, $obj->id),
+      @update = ({_id => $doc->id}, {'$pull' => {$accessor => bson_dbref($obj->model->collection_name, $obj->id),},},);
+
+      # Blocking
+      unless ($cb) {
+        $doc->_storage_collection->update(@update);
+        $doc->data->{$accessor} = [grep { $_->{'$id'} ne $obj->id } @{$doc->data->{$accessor} || []}];
+        return $doc;
+      }
+
+      # Non-blocking
+      Mojo::IOLoop->delay(
+        sub {
+          my ($delay) = @_;
+          $doc->_storage_collection->update(@update, $delay->begin);
         },
-      },
-    );
+        sub {
+          my ($delay, $err, $updated) = @_;
+          $doc->data->{$accessor} = [grep { $_->{'$id'} ne $obj->id } @{$doc->data->{$accessor} || []}] unless $err;
+          $doc->$cb($err);
+        },
+      );
 
-    # Blocking
-    unless ($cb) {
-      $doc->_storage_collection->update(@update);
-      $doc->data->{$accessor} = [ grep { $_->{'$id'} ne $obj->id } @{ $doc->data->{$accessor} || [] } ];
-      return $doc;
+      return $obj;
     }
-
-    # Non-blocking
-    Mojo::IOLoop->delay(
-      sub {
-        my($delay) = @_;
-        $doc->_storage_collection->update(@update, $delay->begin);
-      },
-      sub {
-        my($delay, $err, $updated) = @_;
-        $doc->data->{$accessor} = [ grep { $_->{'$id'} ne $obj->id } @{ $doc->data->{$accessor} || [] } ] unless $err;
-        $doc->$cb($err);
-      },
-    );
-
-    return $obj;
-  });
+  );
 
   return $self;
 }
 
 sub _monkey_patch_search_method {
-  my $self = shift;
+  my $self     = shift;
   my $accessor = $self->accessor;
 
-  Mojo::Util::monkey_patch($self->document_class, $self->search_method_name, sub {
-    my($doc, $query, $extra) = @_;
-    my $related_model = $self->_related_model;
+  Mojo::Util::monkey_patch(
+    $self->document_class,
+    $self->search_method_name,
+    sub {
+      my ($doc, $query, $extra) = @_;
+      my $related_model = $self->_related_model;
 
-    return $related_model->new_collection(
-      $doc->connection,
-      extra => $extra || {},
-      query => {
-        %{ $query || {} },
-        _id => {
-          '$in' => [ map { $_->{'$id'} } @{ $doc->data->{$accessor} || [] } ],
-        },
-      },
-    );
-  });
+      return $related_model->new_collection(
+        $doc->connection,
+        extra => $extra || {},
+        query => {%{$query || {}}, _id => {'$in' => [map { $_->{'$id'} } @{$doc->data->{$accessor} || []}],},},
+      );
+    }
+  );
 
   return $self;
 }

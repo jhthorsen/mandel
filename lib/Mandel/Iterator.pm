@@ -14,7 +14,7 @@ use Mojo::Base -base;
 use Scalar::Util 'blessed';
 use Carp 'confess';
 
-require Mandel::Collection; # TODO: Fix ugly method call below
+require Mandel::Collection;    # TODO: Fix ugly method call below
 
 =head1 ATTRIBUTES
 
@@ -29,7 +29,7 @@ An object that inherit from L<Mandel::Model>.
 =cut
 
 has cursor => sub { confess "cursor required in constructor" };
-has model => sub { confess "model required in constructor" };
+has model  => sub { confess "model required in constructor" };
 
 =head1 METHODS
 
@@ -42,13 +42,16 @@ Fetch next document.
 =cut
 
 sub next {
-  my($self, $cb) = @_;
+  my ($self, $cb) = @_;
 
-  $self->cursor->next(sub {
-    my($cursor, $err, $doc) = @_;
-    # TODO: Fix this ugly method call
-    $self->$cb($err, $doc ? $self->Mandel::Collection::_new_document($doc, 1) : undef);
-  });
+  $self->cursor->next(
+    sub {
+      my ($cursor, $err, $doc) = @_;
+
+      # TODO: Fix this ugly method call
+      $self->$cb($err, $doc ? $self->Mandel::Collection::_new_document($doc, 1) : undef);
+    }
+  );
 
   $self;
 }
@@ -62,12 +65,14 @@ Rewind cursor and kill it on the server
 =cut
 
 sub rewind {
-  my($self, $cb) = @_;
+  my ($self, $cb) = @_;
 
-  if($self->{cursor}) {
-    $self->cursor->rewind(sub {
-      $self->$cb($_[1]);
-    });
+  if ($self->{cursor}) {
+    $self->cursor->rewind(
+      sub {
+        $self->$cb($_[1]);
+      }
+    );
   }
   else {
     $self->$cb('');
