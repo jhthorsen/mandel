@@ -101,8 +101,9 @@ Add methods to L<Mandel::Relationship/document_class>.
 sub monkey_patch {
   my $self = shift;
   my $foreign_field = $self->foreign_field;
+  my $accessor = $self->accessor;
 
-  Mojo::Util::monkey_patch($self->document_class, $self->accessor, sub {
+  Mojo::Util::monkey_patch($self->document_class, $accessor, sub {
     my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
     my $doc = shift;
     my $obj = shift;
@@ -124,6 +125,7 @@ sub monkey_patch {
       unless ($cb) {
         $obj->save;
         $doc->save;
+        $doc->_cache($accessor => $obj);
         return $doc;
       }
 
@@ -137,14 +139,29 @@ sub monkey_patch {
         sub {
           my($delay, $o_err, $d_err) = @_;
           my $err = $o_err || $d_err;
+          $doc->_cache($accessor => $obj) unless $err;
           $doc->$cb($err, $obj);
         },
       );
     }
+    elsif(my $cached = $doc->_cache($accessor)) { # get cached ===============
+      return $cached unless $cb;
+      $self->$cb('', $cached);
+    }
     else { # get =============================================================
       my $cursor = $related_collection->search({ _id => $doc->data->{$foreign_field}{'$id'} });
-      return $cursor->single unless $cb;
-      $cursor->single(sub { $doc->$cb(@_[1, 2]) });
+
+      unless($cb) {
+        my $obj = $cursor->single;
+        $doc->_cache($accessor => $obj);
+        return $obj;
+      }
+
+      $cursor->single(sub {
+        my($cursor, $err, $obj) = @_;
+        $doc->_cache($accessor => $obj);
+        $doc->$cb($err, $obj);
+      });
     }
 
     $doc;

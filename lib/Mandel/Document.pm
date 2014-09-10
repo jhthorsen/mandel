@@ -173,6 +173,25 @@ sub new {
   $self;
 }
 
+=head2 fresh
+
+  $self = $self->fresh;
+
+Calling this method will force the next relationship call to be
+fresh from database instead of cached. Example:
+
+  # ...
+  $self->fresh->cats(sub {
+    my($self, $err, $cats) = @_;
+  });
+
+=cut
+
+sub fresh {
+  $_[0]->{fresh} = 1;
+  $_[0];
+}
+
 =head2 initialize
 
 A no-op placeholder useful for initialization. See L<Mandel/initialize>.
@@ -438,6 +457,15 @@ L<Mojo::JSON>.
 =cut
 
 sub TO_JSON { shift->data }
+
+sub _cache {
+  my $self = shift;
+  my $cache = $self->{cache} ||= {};
+
+  return $cache->{$_[0]} if @_ == 1; # get
+  $cache->{$_[0]} = $_[1]; # set
+  return $self;
+}
 
 =head1 SEE ALSO
 

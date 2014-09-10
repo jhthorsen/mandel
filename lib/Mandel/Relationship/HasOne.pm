@@ -70,6 +70,7 @@ Add methods to L<Mandel::Relationship/document_class>.
 sub monkey_patch {
   my $self = shift;
   my $foreign_field = $self->foreign_field;
+  my $accessor = $self->accessor;
 
   Mojo::Util::monkey_patch($self->document_class, $self->accessor, sub {
     my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
@@ -90,6 +91,7 @@ sub monkey_patch {
         $related_collection->search({ sprintf('%s.$id', $foreign_field), $doc->id })->remove();
         $obj->save;
         $doc->save;
+        $doc->_cache($accessor => $obj);
         return $doc;
       }
 
@@ -108,12 +110,22 @@ sub monkey_patch {
         sub {
           my($delay, $o_err, $d_err) = @_;
           my $err = $o_err || $d_err;
+          $doc->_cache($accessor => $obj) unless $err;
           $doc->$cb($err, $obj);
         },
       );
     }
     else { # get =============================================================
       my $cursor = $related_collection->search({ sprintf('%s.$id', $foreign_field), $doc->id });
+      my $cached = $doc->_cache($accessor);
+
+      # Cached non-blocking
+      if ($cached) {
+        $doc->$cb('', $cached);
+        return $self;
+      }
+
+
       return $cursor->single unless $cb;
       $cursor->single(sub { $doc->$cb(@_[1, 2]) });
     }

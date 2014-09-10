@@ -40,11 +40,13 @@ $connection->storage->db->command(dropDatabase => 1);
   Mojo::IOLoop->start;
   is $n, 2, 'two persons in the database';
 
+  $person = undef;
   $cat->person(sub {
     (undef, $err, $person) = @_;
     Mojo::IOLoop->stop;
   });
-  Mojo::IOLoop->start;
+  ok $person, 'person from cache';
+  Mojo::IOLoop->start unless $person;
 
   is $person->id, $id, 'got person';
   $id = $person->id;
