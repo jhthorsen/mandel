@@ -1,5 +1,9 @@
 Revision history for Mandel
 
+0.21     Wed Sep 10 15:50:50 2014
+       * Fix document extends
+         Contributor: Alexey Neyasov
+
 0.20     Thu May  8 19:26:11 2014
        * Add "builder" support to field.
        * Remove "_build_data" from documentation.
