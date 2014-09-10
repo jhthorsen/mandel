@@ -1,5 +1,11 @@
 Revision history for Mandel
 
+0.23
+       * Fix pushing object to ListOf relationship
+       * Change return value for BelongsTo get accessor: Now returns the saved object.
+       * Change return value for HasOne get accessor: Now returns the saved object.
+       * Mandel::Document will cache objects
+
 0.22     Wed Sep 10 16:40:05 2014
        * Fix missing dependencies
        * Run perltidy on the codebase

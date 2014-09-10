@@ -161,26 +161,31 @@ sub _monkey_patch_all_method {
 
   Mojo::Util::monkey_patch(
     $self->document_class,
-    $self->accessor,
+    $accessor,
     sub {
       my ($doc, $cb) = @_;
+      my $cached = delete $doc->{fresh} ? undef : $doc->_cache($accessor);
 
       # Blocking
       unless ($cb) {
-        my $objs = $doc->$search->all;
-        my %lookup = map { $_->id, $_ } @$objs;
-        return [map { $lookup{$_->{'$id'}} } @{$doc->data->{$accessor} || []}];
+        return $cached if $cached;
+        my %lookup = map { $_->id, $_ } @{$doc->$search->all};
+        return $doc->_cache($accessor => [map { $lookup{$_->{'$id'}} } @{$doc->data->{$accessor} || []}]);
       }
 
       # Non-blocking
-      $doc->$search->all(
-        sub {
-          my ($collection, $err, $objs) = @_;
-          my %lookup = map { $_->id, $_ } @$objs;
-
-          $doc->$cb($err, [map { $lookup{$_->{'$id'}} } @{$doc->data->{$accessor} || []}],);
-        }
-      );
+      if ($cached) {
+        $doc->$cb('', $cached);
+      }
+      else {
+        $doc->$search->all(
+          sub {
+            my ($collection, $err, $objs) = @_;
+            my %lookup = map { $_->id, $_ } @$objs;
+            $doc->$cb($err, $doc->_cache($accessor => [map { $lookup{$_->{'$id'}} } @{$doc->data->{$accessor} || []}]));
+          }
+        );
+      }
 
       return $doc;
     }
@@ -199,7 +204,8 @@ sub _monkey_patch_push_method {
     sub {
       my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
       my ($doc, $obj, $pos) = @_;
-      my ($dbref, $list, @update);
+      my ($dbref, $push_ref, @update);
+      my $cached = $doc->_cache($accessor);
 
       if (ref $obj eq 'HASH') {
         $obj = $self->_related_model->new_collection($doc->connection)->create($obj);
@@ -210,27 +216,33 @@ sub _monkey_patch_push_method {
       }
 
       $dbref = bson_dbref $obj->model->collection_name, $obj->id;
-      $list = $doc->data->{$accessor} ||= [];
 
       @update = (
-        $doc->data,
-        {'$push' => {$accessor => {'$each' => [$dbref], defined $pos ? ('$position' => $pos) : (),},},},
-        {upsert => 1,},
+        {_id     => $doc->id},
+        {'$push' => {$accessor => {'$each' => [$dbref], defined $pos ? ('$position' => $pos + 0) : ()}}},
+        {upsert  => 1},
       );
+
+      $push_ref = sub {
+        my $list = $doc->data->{$accessor} ||= [];
+
+        if (defined $pos and $pos < @$list) {
+          splice @$cached, $pos, 0, $obj if $cached;
+          splice @$list, $pos, 0, $dbref;
+        }
+        else {
+          push @$cached, $obj if $cached;
+          push @$list, $dbref;
+        }
+
+        $doc->in_storage(1);
+      };
 
       # Blocking
       unless ($cb) {
         $obj->save;
         $doc->_storage_collection->update(@update);
-        $doc->in_storage(1);
-
-        if (defined $pos and $pos < @$list) {
-          splice @$list, $pos, 0, $dbref;
-        }
-        else {
-          push @$list, $dbref;
-        }
-
+        $push_ref->();
         return $obj;
       }
 
@@ -245,17 +257,7 @@ sub _monkey_patch_push_method {
           my ($delay, $o_err, $d_err, $updated) = @_;
           my $err = $o_err || $d_err;
           $err ||= 'Document was not stored. Unknown error' unless $updated and $updated->{n};
-
-          unless ($err) {
-            $doc->in_storage(1);
-            if (defined $pos and $pos < @$list) {
-              splice @$list, $pos, 0, $dbref;
-            }
-            else {
-              push @$list, $dbref;
-            }
-          }
-
+          $push_ref->() unless $err;
           $doc->$cb($err // '', $obj);
         },
       );
@@ -276,18 +278,20 @@ sub _monkey_patch_remove_method {
     $self->remove_method_name,
     sub {
       my ($doc, $obj, $cb) = @_;
+      my $cached = $doc->_cache($accessor);
       my @update;
 
       unless (UNIVERSAL::isa($obj, 'Mandel::Document')) {
         $obj = $self->_related_model->new_collection($doc->connection)->create({_id => $obj});
       }
 
-      @update = ({_id => $doc->id}, {'$pull' => {$accessor => bson_dbref($obj->model->collection_name, $obj->id),},},);
+      @update = ({_id => $doc->id}, {'$pull' => {$accessor => bson_dbref($obj->model->collection_name, $obj->id)}});
 
       # Blocking
       unless ($cb) {
         $doc->_storage_collection->update(@update);
         $doc->data->{$accessor} = [grep { $_->{'$id'} ne $obj->id } @{$doc->data->{$accessor} || []}];
+        @$cached = grep { $_->id ne $obj->id } @$cached if $cached;
         return $doc;
       }
 
@@ -300,6 +304,7 @@ sub _monkey_patch_remove_method {
         sub {
           my ($delay, $err, $updated) = @_;
           $doc->data->{$accessor} = [grep { $_->{'$id'} ne $obj->id } @{$doc->data->{$accessor} || []}] unless $err;
+          @$cached = grep { $_->id ne $obj->id } @$cached if $cached and !$err;
           $doc->$cb($err);
         },
       );
@@ -325,7 +330,7 @@ sub _monkey_patch_search_method {
       return $related_model->new_collection(
         $doc->connection,
         extra => $extra || {},
-        query => {%{$query || {}}, _id => {'$in' => [map { $_->{'$id'} } @{$doc->data->{$accessor} || []}],},},
+        query => {%{$query || {}}, _id => {'$in' => [map { $_->{'$id'} } @{$doc->data->{$accessor} || []}]}},
       );
     }
   );

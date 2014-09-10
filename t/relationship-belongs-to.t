@@ -13,7 +13,7 @@ isa_ok $cat->relationship(belongs_to => person => $person->document_class)->monk
 my $doc = $cat->document_class->new({connection => bless {}, 'dummy_class_connection_required'});
 my $oid = bson_oid;
 
-is $doc->person($oid), $doc, 'belongs_to with oid returns self';
+is $doc->person($oid), $oid, 'belongs_to with oid returns oid';
 is_deeply($doc->data->{person}, {'$ref' => 'persons', '$id' => $oid}, 'data.person == oid');
 
 done_testing;
