@@ -21,8 +21,9 @@ $connection->storage->db->command(dropDatabase => 1);
   ok $kitten->in_storage, 'kitten in_storage';
   ok $person->in_storage, 'person in_storage';
 
-  $person->push_kittens({name => $name + 0}, 0, sub { (undef, $err, $kitten) = @_; Mojo::IOLoop->stop if ++$n == 4 });
-  $person->push_kittens({name => $name + 1}, 1, sub { (undef, $err, $kitten) = @_; Mojo::IOLoop->stop if ++$n == 4 });
+  $person->push_kittens({name => $name + 0}, 0, sub { (undef, $err, $kitten) = @_; Mojo::IOLoop->stop; ++$n });
+  Mojo::IOLoop->start;
+  $person->push_kittens({name => $name + 1}, 1, sub { (undef, $err, $kitten) = @_; Mojo::IOLoop->stop; ++$n });
   Mojo::IOLoop->start;
   is int(@{$person->data->{kittens}}), 3, 'person has 3 kittens in list';
   ok !$err, 'no error after 0,1' or diag $err;

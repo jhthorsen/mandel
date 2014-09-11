@@ -36,8 +36,8 @@ $connection->storage->db->command(dropDatabase => 1);
 {
   my ($n, $err, $cat, $cats);
   my $person = $connection->collection('person')->create({});
-  $person->save(sub { $n++; });
-  $person->cats(sub { (undef, $err, $cats) = @_; Mojo::IOLoop->stop; $n++; });
+  $person->save(sub { Mojo::IOLoop->stop if ++$n == 2; });
+  $person->cats(sub { (undef, $err, $cats) = @_; Mojo::IOLoop->stop if ++$n == 2; });
   Mojo::IOLoop->start;
   ok $person->in_storage, 'person in_storage';
 
