@@ -192,7 +192,7 @@ mongodb document.
 
 sub contains {
   my $self = shift;
-  $POINTER->contains($self->data, @_);
+  $POINTER->data($self->data)->contains(@_);
 }
 
 =head2 fresh
@@ -224,7 +224,7 @@ document.
 
 sub get {
   my $self = shift;
-  $POINTER->get($self->data, @_);
+  $POINTER->data($self->data)->get(@_);
 }
 
 =head2 is_changed
