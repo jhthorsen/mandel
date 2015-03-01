@@ -12,13 +12,12 @@ in mongodb.
 =cut
 
 use Mojo::Base -base;
-use Mojo::Loader;
+use Mojo::Loader 'load_class';
 use Mojo::Util;
 use Mandel::Model::Field;
 use Carp 'confess';
 
-my $LOADER = Mojo::Loader->new;
-my $ANON   = 1;
+my $ANON = 1;
 
 =head1 ATTRIBUTES
 
@@ -192,7 +191,7 @@ sub relationship {
 
   my ($type, $field, $other, %args) = @_;
   my $class = 'Mandel::Relationship::' . Mojo::Util::camelize($type);
-  my $e     = $LOADER->load($class);
+  my $e     = load_class $class;
 
   confess $e if ref $e;
 

@@ -16,6 +16,8 @@ ok $person->document_class->can('kittens'),        'person can kittens()';
 ok $person->document_class->can('push_kittens'),   'person can push_kittens()';
 ok $person->document_class->can('search_kittens'), 'person can search_kittens()';
 
-is_deeply $person->new_collection($connection)->create({})->kittens, [], 'empty kitten list by default';
+if ($ENV{TEST_ONLINE}) {
+  is_deeply $person->new_collection($connection)->create({})->kittens, [], 'empty kitten list by default';
+}
 
 done_testing;

@@ -21,9 +21,7 @@ L<Mandel::Relationship> is the base class for the following classes:
 =cut
 
 use Mojo::Base -base;
-use Mojo::Loader;
-
-my $LOADER = Mojo::Loader->new;
+use Mojo::Loader 'load_class';
 
 =head1 ATTRIBUTES
 
@@ -55,7 +53,7 @@ has related_class  => '';
 # i don't think so, since the number of objects are constant
 has _related_model => sub {
   my $self = shift;
-  my $e    = $LOADER->load($self->related_class);
+  my $e    = load_class($self->related_class);
   die $e if ref $e;
   $self->related_class->model;
 };

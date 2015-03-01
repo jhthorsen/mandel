@@ -71,8 +71,6 @@ use Scalar::Util 'looks_like_number';
 use Carp 'confess';
 use constant DEBUG => $ENV{MANDEL_CURSOR_DEBUG} ? eval 'require Data::Dumper;1' : 0;
 
-my $POINTER = Mojo::JSON::Pointer->new;
-
 =head1 ATTRIBUTES
 
 L<Mandel> inherits all attributes from L<Mojo::Base> and implements the
@@ -192,7 +190,7 @@ mongodb document.
 
 sub contains {
   my $self = shift;
-  $POINTER->contains($self->data, @_);
+  ($self->{pointer} ||= Mojo::JSON::Pointer->new($self->data))->contains(@_);
 }
 
 =head2 fresh
@@ -224,7 +222,7 @@ document.
 
 sub get {
   my $self = shift;
-  $POINTER->get($self->data, @_);
+  ($self->{pointer} ||= Mojo::JSON::Pointer->new($self->data))->get(@_);
 }
 
 =head2 is_changed

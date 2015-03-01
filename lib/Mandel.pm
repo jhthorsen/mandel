@@ -97,7 +97,7 @@ A single MongoDB document with logic.
 =cut
 
 use Mojo::Base 'Mojo::Base';
-use Mojo::Loader;
+use Mojo::Loader qw( find_modules load_class );
 use Mojo::Util;
 use Mandel::Collection;
 use Mandel::Model;
@@ -105,8 +105,6 @@ use Mango;
 use Carp 'confess';
 
 our $VERSION = '0.23';
-
-my $LOADER = Mojo::Loader->new;
 
 =head1 ATTRIBUTES
 
@@ -182,7 +180,7 @@ sub all_document_names {
   my %names = map { $_, 1 } keys %{$self->{model} || {}};
 
   for my $ns (@{$self->namespaces}) {
-    for my $name (@{$LOADER->search($ns)}) {
+    for my $name (find_modules $ns) {
       $name =~ s/^${ns}:://;
       $names{Mojo::Util::decamelize($name)} = 1;
     }
@@ -209,7 +207,7 @@ sub class_for {
 
   for my $ns (@{$self->namespaces}) {
     my $class = $ns . '::' . Mojo::Util::camelize($name);
-    my $e     = $LOADER->load($class);
+    my $e     = load_class $class;
     die $e if ref $e;
     next   if $e;
     return $self->{loaded}{$name} = $class;
