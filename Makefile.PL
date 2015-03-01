@@ -15,6 +15,6 @@ WriteMakefile(
     },
   },
   BUILD_REQUIRES => {'Test::More' => '0.88'},
-  PREREQ_PM      => {'Mango'      => '1.10', 'Mojolicious' => '5.30', 'Type::Tiny' => '1.00'},
+  PREREQ_PM      => {'Mango'      => '1.10', 'Mojolicious' => '6.00', 'Type::Tiny' => '1.00'},
   test           => {TESTS        => 't/*.t'},
 );
