@@ -1,6 +1,6 @@
 Revision history for Mandel
 
-0.25
+0.25     Sun Mar  1 17:56:17 2015
        * Fixed Document->get and Document->contains
 
 0.24     Sun Mar  1 17:52:44 2015
