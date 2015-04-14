@@ -1,5 +1,9 @@
 Revision history for perl distribution Mandel
 
+0.26 2015-04-14T10:53:52+0200
+ - Add coercion support to fields #24
+   Contributor: Huo Linhe
+
 0.25 2015-03-01T17:56:17Z
  - Fixed Document->get and Document->contains
 
