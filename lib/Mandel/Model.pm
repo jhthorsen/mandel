@@ -153,8 +153,11 @@ sub _field_type {
 
   use Types::Standard qw( Num );
 
+  if ($type->has_coercion and $type->coercion->can_be_inlined) {
+    $code .= '$_ = '.$type->coercion->inline_coercion('$_').";\n";
+  }
   if ($type->can_be_inlined) {
-    $code .= $type->inline_assert('$_');
+    $code .= $type->inline_assert('$_')."\n";
   }
   if ($type->is_a_type_of(Num)) {
     $code .= "\$_ += 0;\n";

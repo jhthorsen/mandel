@@ -12,6 +12,7 @@ before_install:
   - sudo apt-get install mongodb-org-server
 install:
   - "cpanm -n Test::Pod Test::Pod::Coverage IO::Socket::SSL"
+  - "cpanm -n ODC/Mango-1.16.tar.gz"
   - "cpanm -n --installdeps ."
 notifications:
   email: false
