@@ -285,21 +285,6 @@ sub initialize {
   }
 }
 
-=head2 import
-
-See L</SYNOPSIS>.
-
-=cut
-
-sub import {
-  my ($class) = @_;
-  my $caller = caller;
-  return unless $class eq __PACKAGE__;
-  Mojo::Util::deprecated("use Mandel; will be deprecated. Use Mojo::Base 'Mandel'; instead");
-  @_ = ($class, __PACKAGE__);
-  goto &Mojo::Base::import;
-}
-
 sub _storage_collection {
   $_[0]->storage->db->collection($_[1]);
 }

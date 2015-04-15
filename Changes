@@ -1,5 +1,8 @@
 Revision history for perl distribution Mandel
 
+0.27 Not Released
+ - Deprecated plain "use Mandel;"
+
 0.26 2015-04-14T10:53:52+0200
  - Add coercion support to fields #24
    Contributor: Huo Linhe
