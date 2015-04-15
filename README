@@ -2,7 +2,7 @@ NAME
     Mandel - Async model layer for MongoDB objects using Mango
 
 VERSION
-    0.26
+    0.27
 
 SYNOPSIS
       # create your custom model class
@@ -151,9 +151,6 @@ METHODS
     The "initialize()" method will be called like this:
 
       $document_class->initialize($self, \%args);
-
-  import
-    See "SYNOPSIS".
 
 SEE ALSO
     Mojolicious, Mango

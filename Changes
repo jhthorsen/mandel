@@ -1,6 +1,7 @@
 Revision history for perl distribution Mandel
 
-0.27 Not Released
+0.27 2015-04-15T08:14:26+0200
+
  - Deprecated plain "use Mandel;"
 
 0.26 2015-04-14T10:53:52+0200
