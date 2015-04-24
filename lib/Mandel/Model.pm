@@ -126,7 +126,7 @@ sub _add_field {
     # We compile custom attribute code for speed
     no strict 'refs';
     # To fix warnings in coercion
-    no warnings;
+    no warnings qw(syntax once);
     warn "-- Attribute $name in $class\n$code\n\n" if $ENV{MOJO_BASE_DEBUG};
     Carp::croak "Mandel::Document error: $@ ($code)" unless eval "$code;1";
 
