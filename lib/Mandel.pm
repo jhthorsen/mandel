@@ -181,6 +181,8 @@ sub all_document_names {
 
   for my $ns (@{$self->namespaces}) {
     for my $name (find_modules $ns) {
+      my $e = load_class $name;
+      next unless $name->isa('Mandel::Document');
       $name =~ s/^${ns}:://;
       $names{Mojo::Util::decamelize($name)} = 1;
     }
