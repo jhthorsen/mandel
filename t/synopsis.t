@@ -100,3 +100,6 @@ $connection->storage->db->command(dropDatabase => 1);
   );
   Mojo::IOLoop->start;
 }
+
+$connection->storage->db->command(dropDatabase => 1) unless $ENV{KEEP_DATABASE};
+
