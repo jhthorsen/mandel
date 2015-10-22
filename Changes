@@ -1,7 +1,12 @@
 Revision history for perl distribution Mandel
 
-0.27 2015-04-15T08:14:26+0200
+0.28 2015-10-22T10:22:09+0200
+ - Fix adding already saved object to belongsTo relationship #27
+   Contributor: Huo Linhe
+ - Fix adding already saved object to hasMany relationship #27
+   Contributor: Huo Linhe
 
+0.27 2015-04-15T08:14:26+0200
  - Deprecated plain "use Mandel;"
 
 0.26 2015-04-14T10:53:52+0200
