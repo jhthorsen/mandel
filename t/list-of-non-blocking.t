@@ -64,4 +64,6 @@ $connection->storage->db->command(dropDatabase => 1);
   is $n, 3, 'three callbacks';
 }
 
+$connection->storage->db->command(dropDatabase => 1) unless $ENV{KEEP_DATABASE};
+
 done_testing;

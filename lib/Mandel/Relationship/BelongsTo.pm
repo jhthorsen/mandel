@@ -123,6 +123,7 @@ sub monkey_patch {
         }
 
         $doc->data->{$foreign_field} = bson_dbref $related_model->collection_name, $obj->id;
+        $doc->dirty->{$foreign_field} = 1 if $doc->dirty;
 
         # Blocking
         unless ($cb) {

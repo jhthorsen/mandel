@@ -168,6 +168,7 @@ sub _monkey_patch_add_method {
       }
 
       $obj->data->{$foreign_field} = bson_dbref $doc->model->collection_name, $doc->id;
+      $obj->dirty->{$foreign_field} = 1 if $obj->dirty;
 
       # Blocking
       unless ($cb) {

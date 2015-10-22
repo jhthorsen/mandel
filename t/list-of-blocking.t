@@ -57,4 +57,6 @@ $connection->storage->db->command(dropDatabase => 1);
   is $kittens->count, 2, 'counted three kittens';
 }
 
+$connection->storage->db->command(dropDatabase => 1) unless $ENV{KEEP_DATABASE};
+
 done_testing;
