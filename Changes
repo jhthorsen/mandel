@@ -1,5 +1,8 @@
 Revision history for perl distribution Mandel
 
+0.29 2016-01-07T10:05:22+0100
+ - Fix all_document_names() will skip non-document classes
+
 0.28 2015-10-22T10:22:09+0200
  - Fix adding already saved object to belongsTo relationship #27
    Contributor: Huo Linhe
