@@ -240,6 +240,15 @@ sub import {
 
 sub TO_JSON { shift->data }
 
+sub _validate_fields {
+  my $self = shift;
+  if (ref $self->{data} eq 'HASH') {
+    for (grep { $self->can($_) } keys %{ $self->{data} }) {
+      $self->$_($self->{data}{$_});
+    }
+  }
+}
+
 sub _cache {
   my $self = shift;
   my $cache = $self->{cache} ||= {};
