@@ -427,7 +427,7 @@ exist.
   $self = $self->remove(sub { my($self, $err) = @_; });
   $self = $self->remove;
 
-Will remove this object from the L</collection> and set mark
+Will remove this object from the L<Mandel/collection> and set mark
 all fields as L</dirty>.
 
 =head2 save
